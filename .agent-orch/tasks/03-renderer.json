@@ -1,0 +1,33 @@
+{
+  "id": "swatch-renderer",
+  "projectId": "swatch",
+  "title": "Implement ANSI renderer (truecolor / xterm256 / none) + unit tests",
+  "description": "Implement `swatch_render` as declared in `src/render.h` (produced by swatch-scaffold). Pure function: takes an rgb + opts + FILE*, emits bytes. No I/O besides the passed FILE*; no env lookups, no TTY probing — mode selection is the CLI's job, not the renderer's.\n\nThis task DEPENDS on swatch-scaffold. Do NOT modify render.h — the signature and the three output formats (none / truecolor / xterm256) are fixed by contract.\n\nRuns in parallel with swatch-parser; the two tasks share no source files.",
+  "requirements": [
+    "Implement `src/render.c`:\n  - `#include \"render.h\"` and `<stdio.h>`.\n  - Function `void swatch_render(rgb_t color, swatch_render_opts_t opts, FILE *out)`.\n  - Guard: if `out == NULL` or `opts.width <= 0` or `opts.height <= 0`, return without writing. (No UB on bad callers, no crash.)\n  - SWATCH_COLOR_NONE branch — emit exactly `#RRGGBB (WxH)\\n` with uppercase two-digit hex per channel, where W=opts.width and H=opts.height. If `opts.label` is set, do NOT duplicate the hex — for NONE mode, the plaintext already contains it, so skip the label line.\n  - SWATCH_COLOR_TRUECOLOR branch — for each of opts.height rows:\n      1. `\\x1b[48;2;<r>;<g>;<b>m`\n      2. `opts.fill` repeated opts.width times\n      3. `\\x1b[0m\\n`\n    If `opts.fill == '\\0'`, treat it as a space character (` `). After the block, if `opts.label` is set, write `#RRGGBB\\n` with uppercase two-digit hex.\n  - SWATCH_COLOR_XTERM256 branch — identical structure to TRUECOLOR but use SGR `48;5;<N>m` where N is the nearest color in the 6×6×6 cube (indices 16..231). Nearest-match: map each channel to the closest of the six steps {0, 95, 135, 175, 215, 255}, then `N = 16 + 36*r_idx + 6*g_idx + b_idx`. (This matches xterm's canonical cube; do not reinvent the step values.)\n  - Any unknown mode value — treat as SWATCH_COLOR_NONE (defensive default).\n  - Use `fprintf(out, ...)` for formatted pieces and `fputc` / `fwrite` for the fill-character runs. Do NOT allocate.",
+    "Implement `tests/test_render.c`:\n  - `#include \"../src/render.h\"`, `#include \"test.h\"`, `<stdio.h>`, `<string.h>`.\n  - Use `fmemopen` (POSIX) to render into an in-memory buffer, then compare with `ASSERT_STR_EQ` against the expected exact byte sequence. Rewind / close properly; ASan must find no leaks.\n  - Test functions (each `static void name(void)`):\n    * `test_none_plain` — rgb=(0x00,0xAF,0x4C), opts={width=6,height=3,fill=' ',label=0,mode=NONE}. Expected: `\"#00AF4C (6x3)\\n\"`.\n    * `test_none_ignores_label` — same but label=1. Expected is identical (no duplicated hex line).\n    * `test_truecolor_6x3` — rgb=(0xFF,0x00,0x00), opts={6,3,' ',0,TRUECOLOR}. Expected: three copies of `\"\\x1b[48;2;255;0;0m      \\x1b[0m\\n\"`.\n    * `test_truecolor_custom_fill` — opts.fill='#', width=4, height=1, rgb=(1,2,3), TRUECOLOR. Expected: `\"\\x1b[48;2;1;2;3m####\\x1b[0m\\n\"`.\n    * `test_truecolor_with_label` — rgb=(0x00,0xAF,0x4C), opts={2,1,' ',1,TRUECOLOR}. Expected: `\"\\x1b[48;2;0;175;76m  \\x1b[0m\\n#00AF4C\\n\"`.\n    * `test_truecolor_zero_fill_becomes_space` — opts.fill='\\0', width=3, height=1, TRUECOLOR. Expected run contains three literal spaces.\n    * `test_xterm256_pure_red` — rgb=(255,0,0), opts={1,1,' ',0,XTERM256}. Expected: `\"\\x1b[48;5;196m \\x1b[0m\\n\"` (nearest cube index for pure red is 196 = 16 + 36*5 + 6*0 + 0).\n    * `test_xterm256_pure_black` — rgb=(0,0,0), opts={1,1,' ',0,XTERM256}. Expected: `\"\\x1b[48;5;16m \\x1b[0m\\n\"`.\n    * `test_xterm256_pure_white` — rgb=(255,255,255), opts={1,1,' ',0,XTERM256}. Expected: `\"\\x1b[48;5;231m \\x1b[0m\\n\"`.\n    * `test_unknown_mode_falls_back_to_none` — opts.mode=(swatch_color_mode_t)999, width=6, height=3. Expected: same as test_none_plain output for the same rgb.\n    * `test_guard_zero_width` — opts.width=0, height=3, TRUECOLOR. Expected: empty output (no bytes written).\n    * `test_guard_negative_height` — opts.height=-1. Expected: empty output.\n  - `int main(void)` invokes each via `RUN_TEST(...)` and ends with `TEST_SUMMARY()`.",
+    "Verify: `make test` exits 0 with ASan + UBSan enabled; release `make` also exits 0. Report the output of both."
+  ],
+  "allowedPaths": [
+    "src/render.c",
+    "tests/test_render.c"
+  ],
+  "forbiddenPaths": [
+    "src/parse.h",
+    "src/parse.c",
+    "src/render.h",
+    "src/main.c",
+    "tests/test.h",
+    "tests/test_parse.c",
+    "Makefile",
+    "README.md",
+    "idea.md",
+    "CLAUDE.md",
+    ".gitignore",
+    ".claude/**",
+    ".agent-orch/**"
+  ],
+  "priority": 7,
+  "status": "blocked",
+  "maxRetries": 2
+}

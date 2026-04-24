@@ -1,0 +1,36 @@
+{
+  "id": "swatch-scaffold",
+  "projectId": "swatch",
+  "title": "Scaffold C project: Makefile, shared headers, test harness, gitignore",
+  "description": "swatch is a tiny C11 CLI that prints a colored square for a hex color. This task lays down the shared surface that tasks 2 (parser), 3 (renderer), and 4 (CLI) will build against. Workers 2 and 3 will run in parallel and MUST agree on the types and function signatures defined here — get them right.\n\nNo C source files (*.c) are produced by this task. Only the Makefile, two headers, one test-harness header, and a .gitignore. See ../idea.md for the full CLI spec and acceptance criteria.\n\nIMPORTANT policy — project .gitignore is for PROJECT-owned artifacts only. OS-specific cruft (`.DS_Store`, `Thumbs.db`, `desktop.ini`) and per-user editor cruft (`.vscode/`, `.idea/`, `*.swp`, `*~`) belong in each developer's global gitignore, NOT the project .gitignore. Only list build artifacts produced by running `make` against this project.",
+  "requirements": [
+    "Create Makefile at repo root with these targets:\n  - `all` (default): builds `./swatch` from src/*.c with CFLAGS `-std=c11 -Wall -Wextra -Wpedantic -Werror -O2` and LDFLAGS empty.\n  - `debug`: same as all but CFLAGS adds `-fsanitize=address,undefined -g -O0` and LDFLAGS adds `-fsanitize=address,undefined`. Output is still `./swatch`.\n  - `test`: builds and runs `tests/test_parse` and `tests/test_render` under the debug sanitizer flags. Both test binaries link against the corresponding src/*.c files (NOT against ./swatch's main.o). Exit 0 iff both test runs exit 0.\n  - `install`: copies `./swatch` to `$(PREFIX)/bin/swatch`. Default PREFIX=/usr/local. Use `install -m 755 -D` so the target dir is created if missing.\n  - `clean`: removes `./swatch`, `tests/test_parse`, `tests/test_render`, every `*.o`, every `*.dSYM/` directory, and `dist/`.\n  - `dist`: produces `dist/swatch-$(VERSION).tar.gz` containing Makefile, src/, tests/, README.md, LICENSE (if present), idea.md. VERSION defaults to `0.1.0` and is overridable on the command line.\n  - `help`: prints a one-line description of each target.\n  Use `CC ?= cc` so users can override with gcc/clang. Do NOT hardcode gcc.",
+    "Create `src/parse.h` defining the parser's public surface:\n  - Include guard `#ifndef SWATCH_PARSE_H` / `#define SWATCH_PARSE_H` / `#endif`.\n  - `#include <stdint.h>`\n  - `typedef struct { uint8_t r; uint8_t g; uint8_t b; } rgb_t;`\n  - `int swatch_parse_hex(const char *input, rgb_t *out);`\n    Contract: returns 0 on success and writes rgb to *out; returns -1 on malformed input and leaves *out untouched. Accepts `#RRGGBB`, `RRGGBB`, `#RGB`, `RGB`. Short form expands by duplicating nibbles (`#0AF` → r=0x00, g=0xAA, b=0xFF). Reject any other length, non-hex characters, NULL input, or NULL out pointer.",
+    "Create `src/render.h` defining the renderer's public surface:\n  - Include guard `#ifndef SWATCH_RENDER_H`.\n  - `#include <stdio.h>` and `#include \"parse.h\"` (for rgb_t).\n  - `typedef enum { SWATCH_COLOR_NONE = 0, SWATCH_COLOR_XTERM256 = 1, SWATCH_COLOR_TRUECOLOR = 2 } swatch_color_mode_t;`\n  - `typedef struct { int width; int height; char fill; int label; swatch_color_mode_t mode; } swatch_render_opts_t;`\n  - `void swatch_render(rgb_t color, swatch_render_opts_t opts, FILE *out);`\n    Contract: writes the rendered block to `out`. For SWATCH_COLOR_NONE writes `#RRGGBB (WxH)\\n` in uppercase hex. For SWATCH_COLOR_TRUECOLOR writes `\\x1b[48;2;R;G;Bm` followed by `opts.fill` repeated `opts.width` times, followed by `\\x1b[0m\\n`, repeated `opts.height` times. For SWATCH_COLOR_XTERM256 uses the 6x6x6 cube nearest-match with SGR 48;5;N. If `opts.label` is non-zero, after the block write one more line: `#RRGGBB\\n` in uppercase hex.",
+    "Create `tests/test.h` with a minimal zero-dependency assert harness:\n  - `#include <stdio.h>`, `#include <string.h>`, `#include <stdlib.h>`.\n  - Macro `ASSERT_EQ(actual, expected, msg)` — if actual != expected, prints `FAIL <file>:<line> <msg> got=<actual> want=<expected>`, increments a `static int swatch_test_fails_` counter, and returns from the enclosing test function.\n  - Macro `ASSERT_STR_EQ(actual_ptr, expected_cstr, msg)` — same idea but compares with strcmp; prints both strings on failure.\n  - Macro `ASSERT_TRUE(cond, msg)` / `ASSERT_FALSE(cond, msg)`.\n  - Macro `RUN_TEST(fn)` — prints `RUN <fn_name>` before, `OK <fn_name>` after if no failure was recorded during the call, `FAIL <fn_name>` otherwise. Uses a per-test fail-count checkpoint so one test's failure doesn't mask another's pass.\n  - Macro `TEST_SUMMARY()` — at end of main, prints the total fails counter and returns non-zero exit if any failed.\n  No dynamic allocation. No fork. Pure macros + a file-local static counter.",
+    "Create `.gitignore` at repo root listing ONLY project-owned build artifacts:\n  - `*.o`\n  - `*.a`\n  - `/swatch`\n  - `/tests/test_parse`\n  - `/tests/test_render`\n  - `/dist/`\n  - `*.dSYM/`\n  Do NOT add `.DS_Store`, `Thumbs.db`, `desktop.ini`, `.vscode/`, `.idea/`, `*.swp`, `*~`, or any other OS/editor entry. Those are the developer's global-gitignore responsibility.",
+    "Verify: run `make help` — must exit 0 and list every target. Run `make clean` — must exit 0 (no-op on a fresh tree is fine). Run `cc -std=c11 -Wall -Wextra -Wpedantic -Werror -x c -c src/parse.h -o /tmp/parse-check.o` and the same for src/render.h — both must compile cleanly (header-as-TU check for syntactic correctness and include-self-sufficiency). Clean up the .o after. Report the output of all three."
+  ],
+  "allowedPaths": [
+    "Makefile",
+    "src/parse.h",
+    "src/render.h",
+    "tests/test.h",
+    ".gitignore"
+  ],
+  "forbiddenPaths": [
+    "src/parse.c",
+    "src/render.c",
+    "src/main.c",
+    "tests/test_parse.c",
+    "tests/test_render.c",
+    "README.md",
+    "idea.md",
+    "CLAUDE.md",
+    ".claude/**",
+    ".agent-orch/**"
+  ],
+  "priority": 9,
+  "status": "pending",
+  "maxRetries": 2
+}
