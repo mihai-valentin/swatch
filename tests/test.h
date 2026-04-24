@@ -10,7 +10,7 @@
  *
  * File-local static counter — each test binary has one TU that includes this
  * header (the test_*.c file that defines main), which is where the counter
- * lives. Source files under test (src/*.c) must not include this header.
+ * lives. Source files under test (src/<name>.c) must not include this header.
  */
 static int swatch_test_fails_ = 0;
 
