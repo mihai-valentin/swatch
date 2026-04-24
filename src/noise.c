@@ -52,7 +52,7 @@ static unsigned rand_unsigned(void) {
 }
 
 void swatch_noise_draw_frame(swatch_color_mode_t mode, int width, int height,
-                             unsigned (*rng)(void), FILE *out) {
+                             int bw, unsigned (*rng)(void), FILE *out) {
     if (out == NULL || width <= 0 || height <= 0 || rng == NULL) {
         return;
     }
@@ -64,15 +64,32 @@ void swatch_noise_draw_frame(swatch_color_mode_t mode, int width, int height,
 
     for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
-            uint8_t r = (uint8_t)(rng() & 0xFFu);
-            uint8_t g = (uint8_t)(rng() & 0xFFu);
-            uint8_t b = (uint8_t)(rng() & 0xFFu);
-            if (mode == SWATCH_COLOR_TRUECOLOR) {
-                fprintf(out, "\x1b[48;2;%u;%u;%um ",
-                        (unsigned)r, (unsigned)g, (unsigned)b);
+            if (bw) {
+                unsigned bit = rng() & 1u;
+                if (mode == SWATCH_COLOR_TRUECOLOR) {
+                    if (bit) {
+                        fputs("\x1b[48;2;255;255;255m ", out);
+                    } else {
+                        fputs("\x1b[48;2;0;0;0m ", out);
+                    }
+                } else {
+                    if (bit) {
+                        fputs("\x1b[48;5;231m ", out);
+                    } else {
+                        fputs("\x1b[48;5;16m ", out);
+                    }
+                }
             } else {
-                int n = 16 + 36 * cube_index(r) + 6 * cube_index(g) + cube_index(b);
-                fprintf(out, "\x1b[48;5;%dm ", n);
+                uint8_t r = (uint8_t)(rng() & 0xFFu);
+                uint8_t g = (uint8_t)(rng() & 0xFFu);
+                uint8_t b = (uint8_t)(rng() & 0xFFu);
+                if (mode == SWATCH_COLOR_TRUECOLOR) {
+                    fprintf(out, "\x1b[48;2;%u;%u;%um ",
+                            (unsigned)r, (unsigned)g, (unsigned)b);
+                } else {
+                    int n = 16 + 36 * cube_index(r) + 6 * cube_index(g) + cube_index(b);
+                    fprintf(out, "\x1b[48;5;%dm ", n);
+                }
             }
         }
         if (row == height - 1) {
@@ -153,7 +170,7 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
     };
 
     while (!swatch_noise_stop && (total_frames < 0 || frames_drawn < total_frames)) {
-        swatch_noise_draw_frame(opts.mode, width, height, rand_unsigned, out);
+        swatch_noise_draw_frame(opts.mode, width, height, opts.bw, rand_unsigned, out);
         fflush(out);
         nanosleep(&delay, NULL);
         frames_drawn++;

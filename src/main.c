@@ -39,6 +39,7 @@ static void print_usage(FILE *out, const char *prog) {
         "  --fps N        Frames per second for noise (1..60, default 15).\n"
         "  --duration N   Seconds to run noise (0..3600, default 0 = until\n"
         "                 Ctrl+C).\n"
+        "  --bw           Black-and-white noise only (no color chroma, noise only).\n"
         "  --help         Print this help and exit 0\n"
         "  --version      Print version and exit 0\n"
         "\n"
@@ -165,9 +166,10 @@ int main(int argc, char **argv) {
     swatch_color_mode_t forced_mode = SWATCH_COLOR_NONE;
     int fps_opt = 0;
     int duration_opt = 0;
+    int bw_opt = 0;
 
     enum { OPT_SIZE = 256, OPT_CHAR, OPT_LABEL, OPT_HELP, OPT_VERSION, OPT_COLOR,
-           OPT_FPS, OPT_DURATION };
+           OPT_FPS, OPT_DURATION, OPT_BW };
     static const struct option longopts[] = {
         {"size",     required_argument, 0, OPT_SIZE},
         {"char",     required_argument, 0, OPT_CHAR},
@@ -175,6 +177,7 @@ int main(int argc, char **argv) {
         {"color",    required_argument, 0, OPT_COLOR},
         {"fps",      required_argument, 0, OPT_FPS},
         {"duration", required_argument, 0, OPT_DURATION},
+        {"bw",       no_argument,       0, OPT_BW},
         {"help",     no_argument,       0, OPT_HELP},
         {"version",  no_argument,       0, OPT_VERSION},
         {0, 0, 0, 0}
@@ -237,6 +240,9 @@ int main(int argc, char **argv) {
             duration_opt = (int)v;
             break;
         }
+        case OPT_BW:
+            bw_opt = 1;
+            break;
         case OPT_HELP:
             print_usage(stdout, prog);
             return 0;
@@ -261,6 +267,7 @@ int main(int argc, char **argv) {
             .height           = size_specified ? height : 0,
             .fps              = fps_opt,
             .duration_seconds = duration_opt,
+            .bw               = bw_opt,
             .mode             = color_forced ? forced_mode : resolve_color_mode()
         };
         return swatch_noise_run(n_opts, stdout);

@@ -108,7 +108,10 @@ swatch noise                          # run until Ctrl+C at 15 fps
 swatch noise --fps 30 --duration 5    # 30 fps, auto-stop after 5 seconds
 swatch noise --color 256              # force xterm-256 cube mapping
 swatch noise --size 60x20             # override the animation area
+swatch noise --bw                     # 1-bit black-and-white noise
 ```
+
+`--bw` restricts the palette to pure black and white (1-bit noise); useful for high-contrast demos.
 
 Requires a TTY on stdout and a color mode other than `none` — piping or redirecting output, or running with `--color none` / `NO_COLOR=1`, exits 64 with a stderr message.
 

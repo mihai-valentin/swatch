@@ -69,6 +69,7 @@ swatch noise [--size WxH] [--color MODE] [--fps N] [--duration SECONDS]
 | `--color MODE`    | `auto`      | Required to resolve to `truecolor` or `256` — `none` is refused        |
 | `--fps N`         | `15`        | Frames per second, clamped to `1..60`                                  |
 | `--duration N`    | `0`         | Seconds to run; `0` means "until Ctrl+C", otherwise clamped to `1..3600` |
+| `--bw`            | off         | Black-and-white noise only (1-bit palette)                             |
 
 Requirements:
 
