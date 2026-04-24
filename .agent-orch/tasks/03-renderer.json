@@ -28,6 +28,6 @@
     ".agent-orch/**"
   ],
   "priority": 7,
-  "status": "blocked",
+  "status": "pending",
   "maxRetries": 2
 }
