@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `swatch noise` subcommand — fullscreen random-RGB white-noise animation; honors `--color`, `--size`; new `--fps` (1..60, default 15) and `--duration` (0..3600, 0 = run until Ctrl+C) flags. Refuses with exit 64 if stdout is not a TTY or color mode is `none`.
 
+### Fixed
+
+- `swatch noise` no longer scrolls the terminal: uses the alternate screen buffer (ANSI `\x1b[?1049h` / `\x1b[?1049l`) for the duration of the animation, so scrollback is preserved and Ctrl+C returns the user to their original shell state.
+
 ## [0.1.1] - 2026-04-24
 
 ### Fixed
