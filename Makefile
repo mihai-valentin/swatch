@@ -39,7 +39,8 @@ test: tests/test_parse tests/test_render
 install: CFLAGS  := $(CFLAGS_RELEASE)
 install: LDFLAGS :=
 install: swatch
-	install -m 755 -D ./swatch $(PREFIX)/bin/swatch
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	install -m 755 ./swatch $(DESTDIR)$(PREFIX)/bin/swatch
 
 clean:
 	rm -f ./swatch
