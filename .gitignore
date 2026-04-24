@@ -1,0 +1,7 @@
+*.o
+*.a
+/swatch
+/tests/test_parse
+/tests/test_render
+/dist/
+*.dSYM/
