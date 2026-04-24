@@ -10,3 +10,6 @@
 /.agent-orch/shawarma.db
 /.agent-orch/tasks.bak/
 /.worktrees/
+
+# Mirrored Shawarma skill card — canonical copy lives at ../.claude/skills/shawarma/
+/.claude/skills/shawarma/
