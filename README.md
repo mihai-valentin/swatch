@@ -14,8 +14,6 @@ $ swatch "#00AF4C"
 
 (Square is rendered with ANSI 24-bit background escapes — the blocks are the background-color of the given hex.)
 
-Part of the [xlnf](https://mihai-valentin.github.io/xlnf/) portfolio. Built as a shawarma orchestration test-case — see `idea.md`.
-
 ## Usage
 
 ```bash

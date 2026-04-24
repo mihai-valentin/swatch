@@ -1,35 +1,35 @@
-# Sub-project — part of the xlnf SaaS factory
+# Sub-project — part of the xlnf workspace
 
-This repository is **one sub-project** inside the `xlnf` meta-project. The root session at `../` (i.e. `/home/mihai/xlnf/`) administrates the whole portfolio; this session implements *this* product.
+This repository is **one sub-project** inside the `xlnf` meta-project. The root session at `../` (i.e. `/home/mihai/xlnf/`) administrates the broader workspace; this session implements this tool.
 
 ## Where to find meta-project context
 
-When you need shared rules, conventions, or portfolio context, read these files in the xlnf root:
+When you need shared rules, conventions, or workspace context, read these files in the xlnf root:
 
 | File | Purpose |
 |------|---------|
-| `../SUMMARY.md` | Vision, full portfolio, tier rankings |
-| `../CLAUDE.md` | Management rules: naming, branching, deployment contract, Shawarma workflow |
+| `../SUMMARY.md` | Vision and workspace index |
+| `../CLAUDE.md` | Management rules: naming, branching, Shawarma workflow |
 | `../.claude/skills/shawarma/SKILL.md` | Canonical Shawarma skill (also mirrored here under `.claude/skills/shawarma/`) |
 | `../.agent-orch/` | Shared orchestration state (shawarma.db, task manifests) |
-| `~/.gpt-export/exports/2026-04-15T08-17-46-740Z-neuro-with-shawarma/full.md` | Original source conversation for all portfolio decisions |
+| `~/.gpt-export/exports/2026-04-15T08-17-46-740Z-neuro-with-shawarma/full.md` | Original source conversation for workspace decisions |
 
 You may read from `../` freely. **Do not modify files in the xlnf root from this sub-session** — surface the change as a request to the root session instead.
 
 ## This sub-project
 
 - **Concept:** see `./idea.md` (core idea, CLI surface, acceptance criteria, out-of-scope)
-- **Role in the portfolio:** Internal / test-case. `swatch` is a throwaway C CLI used to exercise the shawarma multi-agent orchestration flow end-to-end. Not a revenue product.
+- **Role in the workspace:** Internal / test-case. `swatch` is a tiny C CLI used to exercise the shawarma multi-agent orchestration flow end-to-end.
 - **Purpose:** validate that shawarma's planner correctly stages four dependent C tasks, that parallel workers respect a shared header interface, and that the verifier enforces `-Werror` + sanitizer discipline.
 
 ## Operating rules (inherited from root)
 
 - Follow naming / branching / env-var conventions from `../CLAUDE.md`
 - Default branch is `main` (set by `git init -b main` at scaffold time)
-- Ship a `Dockerfile`, health check, and stdout logging **where applicable** — swatch is a CLI, not a server, so the deployment contract adapts: build-and-install from source via `make install`; no container, no release binaries for v0.1.0
+- swatch is a CLI — no Dockerfile, no health check, no stdout-logging ceremony. Install from source via `make install`. Tagged release binaries are published via `.github/workflows/release.yml` on `v*` pushes.
 - Conventional commits
 - Dispatch heavy lifting via Shawarma task manifests under `./.agent-orch/tasks/` — the skill card lives at `.claude/skills/shawarma/SKILL.md`
-- Surface cross-project or architectural decisions back to the root session; do not decide them here
+- Surface cross-workspace or architectural decisions back to the root session; do not decide them here
 
 ## Code style (C)
 

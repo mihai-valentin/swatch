@@ -2,7 +2,7 @@
 
 ## One-liner
 
-Tiny C CLI that takes a hex color and prints a colored square in the terminal. Exists primarily as a **shawarma orchestration test-case**, not as a revenue product.
+Tiny C CLI that takes a hex color and prints a colored square in the terminal. Exists primarily as a **shawarma orchestration test-case**.
 
 ## Purpose
 
@@ -21,7 +21,7 @@ C11, `gcc`/`clang`, plain `Makefile`. No external dependencies — `getopt_long`
 
 Chosen because:
 
-1. It's the portfolio's first C artifact — different discipline than the Node/TS projects, different stressors on shawarma's workers (header hygiene, `-Werror`, sanitizer runs, memory safety).
+1. First C project wired through this workflow — different discipline than the Node/TS projects, different stressors on shawarma's workers (header hygiene, `-Werror`, sanitizer runs, memory safety).
 2. Zero-dep build means the worker agents cannot sidestep anything by reaching for a library.
 
 ## CLI surface
