@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cc: [gcc, clang]
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang on Ubuntu
+        if: matrix.os == 'ubuntu-latest' && matrix.cc == 'clang'
+        run: sudo apt-get update && sudo apt-get install -y clang
+
+      - name: Build (release)
+        run: make clean && make
+
+      - name: Test (ASan + UBSan)
+        run: make test
+
+      - name: Install smoke
+        run: |
+          make install PREFIX=/tmp/swatch-ci
+          /tmp/swatch-ci/bin/swatch --version

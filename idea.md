@@ -83,7 +83,7 @@ swatch <hex> [--size WxH] [--char CHAR] [--label] [--help] [--version]
 
 ## Out of scope
 
-- No packaging (Homebrew / deb / rpm / GH Releases binaries). Source-install only for v0.1.0.
+- No packaging (Homebrew / deb / rpm). GitHub Releases publishes tagged linux and macos tarballs via `.github/workflows/release.yml`.
 - No configuration file, no theme presets, no palette mode, no image output.
 - No Windows port (Unix-only — POSIX `getopt_long` + `isatty`).
 - No man page. `--help` output is the documentation.

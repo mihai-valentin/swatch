@@ -1,0 +1,18 @@
+* text=auto eol=lf
+
+*.c     text
+*.h     text
+*.md    text
+*.yml   text
+*.yaml  text
+*.json  text
+Makefile text
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+
+/swatch             binary
+tests/test_parse    binary
+tests/test_render   binary

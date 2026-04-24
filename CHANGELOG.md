@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-04-24
+
+### Added
+
+- Hex color parser accepting `#RRGGBB`, `RRGGBB`, `#RGB`, and `RGB`. Malformed input exits 2 with a stderr message.
+- ANSI renderer with three modes: truecolor (24-bit), xterm256 (6×6×6 cube nearest-match), and none (plain `#RRGGBB (WxH)` output). Mode selection is automatic from stdout TTY + `NO_COLOR` + `COLORTERM`.
+- CLI flags: `--size WxH` (default 6×3, each 1..200), `--char CHAR`, `--label`, `--help`, `--version`.
+- Makefile targets: `all`, `debug`, `test`, `install`, `clean`, `dist`, `help`. Release build uses `-std=c11 -Wall -Wextra -Wpedantic -Werror -O2`.
+- Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
+- Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
+
+[0.1.0]: REPLACE_WITH_REMOTE_URL/releases/tag/v0.1.0

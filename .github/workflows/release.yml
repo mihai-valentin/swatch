@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve artifact name
+        id: name
+        run: |
+          os_lower="$(echo '${{ runner.os }}' | tr '[:upper:]' '[:lower:]')"
+          arch_lower="$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')"
+          echo "artifact=swatch-${{ github.ref_name }}-${os_lower}-${arch_lower}" >> "$GITHUB_OUTPUT"
+
+      - name: Build (release)
+        run: make clean && make
+
+      - name: Package tarball
+        run: |
+          tar -czf ${{ steps.name.outputs.artifact }}.tar.gz swatch README.md LICENSE CHANGELOG.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.name.outputs.artifact }}
+          path: ${{ steps.name.outputs.artifact }}.tar.gz
+          retention-days: 7
+
+  create-release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.tar.gz
+          body: |
+            See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
+            Pre-built binaries attached for linux and macos. Extract the tarball for your platform and place `swatch` on your `$PATH`.

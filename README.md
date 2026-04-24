@@ -1,5 +1,8 @@
 # swatch
 
+![CI](REPLACE_WITH_REMOTE_URL/actions/workflows/ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 Tiny CLI that prints a colored square for a hex color.
 
 ```
@@ -52,3 +55,36 @@ Requires a C11 compiler (`gcc` or `clang`) and `make`. No other dependencies.
 | 0 | Success |
 | 2 | Malformed hex input |
 | 64 | Usage error (bad flag / missing argument) |
+
+## Installation — pre-built binary
+
+Release binaries are published to GitHub Releases on every `v*` tag.
+
+```bash
+# Linux x86_64
+curl -fsSL REPLACE_WITH_REMOTE_URL/releases/latest/download/swatch-v0.1.0-linux-x64.tar.gz | tar xz
+sudo mv swatch /usr/local/bin/
+
+# macOS (Apple Silicon or Intel)
+curl -fsSL REPLACE_WITH_REMOTE_URL/releases/latest/download/swatch-v0.1.0-macos-arm64.tar.gz | tar xz
+sudo mv swatch /usr/local/bin/
+```
+
+Pre-built binaries only exist after the first `v*` tag has been pushed. Before then, use the source install below.
+
+## Installation — from source
+
+```bash
+git clone REPLACE_WITH_REMOTE_URL.git
+cd swatch
+make
+sudo make install
+```
+
+Requires a C11 compiler (`gcc` or `clang`) and GNU `make`. No runtime dependencies.
+
+## Contributing
+
+swatch is deliberately tiny — open an issue before any non-trivial change so scope stays small.
+
+Before submitting a PR: `make clean && make && make test` must pass locally. CI runs the same gate across `{gcc, clang} × {ubuntu, macos}`; if CI is green on your PR, you're done.
