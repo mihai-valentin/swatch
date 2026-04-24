@@ -112,6 +112,8 @@ swatch noise --size 60x20             # override the animation area
 
 Requires a TTY on stdout and a color mode other than `none` — piping or redirecting output, or running with `--color none` / `NO_COLOR=1`, exits 64 with a stderr message.
 
+Uses the alternate screen buffer, so Ctrl+C (or `--duration` expiry) leaves your scrollback intact.
+
 ## Contributing
 
 swatch is deliberately tiny — open an issue before any non-trivial change so scope stays small.

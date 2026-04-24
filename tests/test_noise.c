@@ -52,9 +52,13 @@ static void test_draw_frame_truecolor_1x1(void) {
     uint8_t g = (uint8_t)(test_rng() & 0xFFu);
     uint8_t b = (uint8_t)(test_rng() & 0xFFu);
 
+    /* Last row drops the trailing newline — the alt-screen buffer that
+     * swatch_noise_run enters contains scrolling on over-tall frames, and
+     * omitting the final \n makes the pure-function frame emission
+     * scroll-safe even outside the alt buffer. */
     char expected[128];
     snprintf(expected, sizeof(expected),
-             "\x1b[H\x1b[48;2;%u;%u;%um \x1b[0m\n",
+             "\x1b[H\x1b[48;2;%u;%u;%um \x1b[0m",
              (unsigned)r, (unsigned)g, (unsigned)b);
 
     test_rng_seed(0);
@@ -77,7 +81,12 @@ static void test_draw_frame_truecolor_3x2(void) {
                                     "\x1b[48;2;%u;%u;%um ",
                                     (unsigned)r, (unsigned)g, (unsigned)b);
         }
-        off += (size_t)snprintf(expected + off, sizeof(expected) - off, "\x1b[0m\n");
+        /* Last row has no trailing newline (alt-screen scroll-safety). */
+        if (row == 1) {
+            off += (size_t)snprintf(expected + off, sizeof(expected) - off, "\x1b[0m");
+        } else {
+            off += (size_t)snprintf(expected + off, sizeof(expected) - off, "\x1b[0m\n");
+        }
     }
 
     test_rng_seed(42);
@@ -94,9 +103,10 @@ static void test_draw_frame_xterm256_1x1(void) {
     int n = 16 + 36 * expected_cube_index(r) + 6 * expected_cube_index(g)
           + expected_cube_index(b);
 
+    /* Last row has no trailing newline (alt-screen scroll-safety). */
     char expected[128];
     snprintf(expected, sizeof(expected),
-             "\x1b[H\x1b[48;5;%dm \x1b[0m\n", n);
+             "\x1b[H\x1b[48;5;%dm \x1b[0m", n);
 
     test_rng_seed(7);
     char buf[256];

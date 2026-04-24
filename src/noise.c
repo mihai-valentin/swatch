@@ -12,6 +12,7 @@
 
 static volatile sig_atomic_t swatch_noise_stop = 0;
 static int swatch_noise_cursor_hidden = 0;
+static int swatch_noise_altscreen_on = 0;
 
 static const int CUBE_STEPS[6] = {0, 95, 135, 175, 215, 255};
 
@@ -37,7 +38,12 @@ static void handle_signal(int sig) {
 
 static void restore_cursor_atexit(void) {
     if (swatch_noise_cursor_hidden) {
-        fputs("\x1b[0m\x1b[?25h\n", stderr);
+        fputs("\x1b[0m\x1b[?25h", stderr);
+        swatch_noise_cursor_hidden = 0;
+    }
+    if (swatch_noise_altscreen_on) {
+        fputs("\x1b[?1049l", stderr);
+        swatch_noise_altscreen_on = 0;
     }
 }
 
@@ -69,7 +75,11 @@ void swatch_noise_draw_frame(swatch_color_mode_t mode, int width, int height,
                 fprintf(out, "\x1b[48;5;%dm ", n);
             }
         }
-        fputs("\x1b[0m\n", out);
+        if (row == height - 1) {
+            fputs("\x1b[0m", out);
+        } else {
+            fputs("\x1b[0m\n", out);
+        }
     }
 }
 
@@ -130,9 +140,10 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
 
     srand((unsigned)time(NULL) ^ (unsigned)getpid());
 
-    fputs("\x1b[?25l\x1b[2J", out);
+    fputs("\x1b[?25l\x1b[?1049h\x1b[H", out);
     fflush(out);
     swatch_noise_cursor_hidden = 1;
+    swatch_noise_altscreen_on = 1;
 
     long total_frames = (duration > 0) ? ((long)duration * (long)fps) : -1;
     long frames_drawn = 0;
@@ -148,8 +159,9 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
         frames_drawn++;
     }
 
-    fputs("\x1b[0m\x1b[?25h\n", out);
+    fputs("\x1b[0m\x1b[?25h\x1b[?1049l\n", out);
     fflush(out);
     swatch_noise_cursor_hidden = 0;
+    swatch_noise_altscreen_on = 0;
     return 0;
 }
