@@ -3,6 +3,7 @@
 /swatch
 /tests/test_parse
 /tests/test_render
+/tests/test_noise
 /dist/
 *.dSYM/
 
