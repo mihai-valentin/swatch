@@ -1,0 +1,4 @@
+.claude/
+.agent-orch/
+.worktrees/
+node_modules/

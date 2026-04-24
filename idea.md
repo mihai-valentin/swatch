@@ -20,23 +20,24 @@ Success = shawarma orchestrates the above autonomously and the resulting binary 
 C11, `gcc`/`clang`, plain `Makefile`. No external dependencies — `getopt_long` for flags, `isatty()`/`getenv()` from libc for environment probes. Tests via a tiny hand-rolled assert macro in `tests/test.h`.
 
 Chosen because:
+
 1. It's the portfolio's first C artifact — different discipline than the Node/TS projects, different stressors on shawarma's workers (header hygiene, `-Werror`, sanitizer runs, memory safety).
 2. Zero-dep build means the worker agents cannot sidestep anything by reaching for a library.
 
 ## CLI surface
 
-```
+```text
 swatch <hex> [--size WxH] [--char CHAR] [--label] [--help] [--version]
 ```
 
-| Flag | Default | Meaning |
-|------|---------|---------|
-| `<hex>` | (required) | `#RRGGBB`, `RRGGBB`, `#RGB`, or `RGB` |
-| `--size WxH` | `6x3` | Block dimensions in characters |
-| `--char CHAR` | `' '` | Character to fill the block with (ANSI background still applies) |
-| `--label` | off | Print the normalized hex on a line below the block |
-| `--help` | — | Print usage and exit 0 |
-| `--version` | — | Print `swatch X.Y.Z` and exit 0 |
+| Flag          | Default    | Meaning                                                          |
+|---------------|------------|------------------------------------------------------------------|
+| `<hex>`       | (required) | `#RRGGBB`, `RRGGBB`, `#RGB`, or `RGB`                            |
+| `--size WxH`  | `6x3`      | Block dimensions in characters                                   |
+| `--char CHAR` | `' '`      | Character to fill the block with (ANSI background still applies) |
+| `--label`     | off        | Print the normalized hex on a line below the block               |
+| `--help`      | —          | Print usage and exit 0                                           |
+| `--version`   | —          | Print `swatch X.Y.Z` and exit 0                                  |
 
 ## Color mode resolution (at startup)
 
@@ -47,7 +48,7 @@ swatch <hex> [--size WxH] [--char CHAR] [--label] [--help] [--version]
 
 ## Architecture (deliberately split across 4 shawarma tasks)
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │  task 1: scaffold                            │
 │   Makefile, src/parse.h, src/render.h,       │

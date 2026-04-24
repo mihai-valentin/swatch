@@ -5,7 +5,7 @@
 
 Tiny CLI that prints a colored square for a hex color.
 
-```
+```console
 $ swatch "#00AF4C"
 █████████
 █████████
@@ -50,11 +50,11 @@ Requires a C11 compiler (`gcc` or `clang`) and `make`. No other dependencies.
 
 ## Exit codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 2 | Malformed hex input |
-| 64 | Usage error (bad flag / missing argument) |
+| Code | Meaning                                   |
+|------|-------------------------------------------|
+| 0    | Success                                   |
+| 2    | Malformed hex input                       |
+| 64   | Usage error (bad flag / missing argument) |
 
 ## Installation — pre-built binary
 
