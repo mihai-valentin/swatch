@@ -15,12 +15,15 @@ static const char *prog_name(const char *argv0) {
 
 static void print_usage(FILE *out, const char *prog) {
     fprintf(out,
-        "Usage: %s <hex> [--size WxH] [--char CHAR] [--label] [--help] [--version]\n"
+        "Usage: %s <hex> [--size WxH] [--char CHAR] [--label] [--color MODE] [--help] [--version]\n"
         "\n"
         "  <hex>          #RRGGBB, RRGGBB, #RGB, or RGB\n"
         "  --size WxH     Block size in characters (default 6x3, each 1..200)\n"
         "  --char CHAR    Single character used to fill the block (default ' ')\n"
         "  --label        Print the normalized hex on a line below the block\n"
+        "  --color MODE   Force color mode; one of auto (default), truecolor,\n"
+        "                 256, none. Use 'truecolor' when auto-detection misses\n"
+        "                 your terminal and shades snap to the xterm-256 cube.\n"
         "  --help         Print this help and exit 0\n"
         "  --version      Print version and exit 0\n"
         "\n"
@@ -62,11 +65,61 @@ static swatch_color_mode_t resolve_color_mode(void) {
     if (getenv("NO_COLOR") != NULL) {
         return SWATCH_COLOR_NONE;
     }
+
     const char *ct = getenv("COLORTERM");
     if (ct != NULL && (strstr(ct, "truecolor") != NULL || strstr(ct, "24bit") != NULL)) {
         return SWATCH_COLOR_TRUECOLOR;
     }
+
+    const char *term = getenv("TERM");
+    if (term != NULL && strstr(term, "direct") != NULL) {
+        return SWATCH_COLOR_TRUECOLOR;
+    }
+
+    if (getenv("WT_SESSION") != NULL)       return SWATCH_COLOR_TRUECOLOR;
+    if (getenv("KITTY_WINDOW_ID") != NULL)  return SWATCH_COLOR_TRUECOLOR;
+    if (getenv("ALACRITTY_LOG") != NULL)    return SWATCH_COLOR_TRUECOLOR;
+    if (getenv("KONSOLE_VERSION") != NULL)  return SWATCH_COLOR_TRUECOLOR;
+
+    const char *tp = getenv("TERM_PROGRAM");
+    if (tp != NULL) {
+        if (strcmp(tp, "iTerm.app") == 0 ||
+            strcmp(tp, "vscode") == 0 ||
+            strcmp(tp, "Apple_Terminal") == 0 ||
+            strcmp(tp, "WezTerm") == 0 ||
+            strcmp(tp, "ghostty") == 0) {
+            return SWATCH_COLOR_TRUECOLOR;
+        }
+    }
+
+    const char *tem = getenv("TERMINAL_EMULATOR");
+    if (tem != NULL && strncmp(tem, "JetBrains", 9) == 0) {
+        return SWATCH_COLOR_TRUECOLOR;
+    }
+
     return SWATCH_COLOR_XTERM256;
+}
+
+static int parse_color_arg(const char *s, swatch_color_mode_t *mode_out, int *is_auto_out) {
+    if (s == NULL) return -1;
+    if (strcmp(s, "auto") == 0) {
+        *is_auto_out = 1;
+        return 0;
+    }
+    *is_auto_out = 0;
+    if (strcmp(s, "truecolor") == 0 || strcmp(s, "24bit") == 0) {
+        *mode_out = SWATCH_COLOR_TRUECOLOR;
+        return 0;
+    }
+    if (strcmp(s, "256") == 0 || strcmp(s, "xterm256") == 0) {
+        *mode_out = SWATCH_COLOR_XTERM256;
+        return 0;
+    }
+    if (strcmp(s, "none") == 0 || strcmp(s, "off") == 0) {
+        *mode_out = SWATCH_COLOR_NONE;
+        return 0;
+    }
+    return -1;
 }
 
 int main(int argc, char **argv) {
@@ -76,12 +129,15 @@ int main(int argc, char **argv) {
     int height = 3;
     char fill = ' ';
     int label = 0;
+    int color_forced = 0;
+    swatch_color_mode_t forced_mode = SWATCH_COLOR_NONE;
 
-    enum { OPT_SIZE = 256, OPT_CHAR, OPT_LABEL, OPT_HELP, OPT_VERSION };
+    enum { OPT_SIZE = 256, OPT_CHAR, OPT_LABEL, OPT_HELP, OPT_VERSION, OPT_COLOR };
     static const struct option longopts[] = {
         {"size",    required_argument, 0, OPT_SIZE},
         {"char",    required_argument, 0, OPT_CHAR},
         {"label",   no_argument,       0, OPT_LABEL},
+        {"color",   required_argument, 0, OPT_COLOR},
         {"help",    no_argument,       0, OPT_HELP},
         {"version", no_argument,       0, OPT_VERSION},
         {0, 0, 0, 0}
@@ -107,6 +163,22 @@ int main(int argc, char **argv) {
         case OPT_LABEL:
             label = 1;
             break;
+        case OPT_COLOR: {
+            int is_auto = 0;
+            swatch_color_mode_t m = SWATCH_COLOR_NONE;
+            if (parse_color_arg(optarg, &m, &is_auto) != 0) {
+                fprintf(stderr, "swatch: invalid --color '%s' (expected auto|truecolor|256|none)\n",
+                        optarg != NULL ? optarg : "");
+                return 64;
+            }
+            if (!is_auto) {
+                color_forced = 1;
+                forced_mode = m;
+            } else {
+                color_forced = 0;
+            }
+            break;
+        }
         case OPT_HELP:
             print_usage(stdout, prog);
             return 0;
@@ -138,7 +210,7 @@ int main(int argc, char **argv) {
         .height = height,
         .fill = fill,
         .label = label,
-        .mode = resolve_color_mode()
+        .mode = color_forced ? forced_mode : resolve_color_mode()
     };
     swatch_render(color, opts, stdout);
     return 0;

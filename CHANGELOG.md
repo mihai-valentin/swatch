@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Hex color parser accepting `#RRGGBB`, `RRGGBB`, `#RGB`, and `RGB`. Malformed input exits 2 with a stderr message.
-- ANSI renderer with three modes: truecolor (24-bit), xterm256 (6×6×6 cube nearest-match), and none (plain `#RRGGBB (WxH)` output). Mode selection is automatic from stdout TTY + `NO_COLOR` + `COLORTERM`.
-- CLI flags: `--size WxH` (default 6×3, each 1..200), `--char CHAR`, `--label`, `--help`, `--version`.
+- ANSI renderer with three modes: truecolor (24-bit), xterm256 (6×6×6 cube nearest-match), and none (plain `#RRGGBB (WxH)` output). Mode is auto-selected from stdout TTY, `NO_COLOR`, `COLORTERM`, `TERM` (`*-direct`), and vendor-specific env (`WT_SESSION`, `KITTY_WINDOW_ID`, `ALACRITTY_LOG`, `KONSOLE_VERSION`, `TERM_PROGRAM`, `TERMINAL_EMULATOR`) — covers Windows Terminal, Kitty, Alacritty, Konsole, iTerm2, Apple Terminal, WezTerm, Ghostty, VS Code, and JetBrains IDE terminals that don't set `COLORTERM`.
+- CLI flags: `--size WxH` (default 6×3, each 1..200), `--char CHAR`, `--label`, `--color MODE` (`auto` / `truecolor` / `256` / `none`), `--help`, `--version`.
 - Makefile targets: `all`, `debug`, `test`, `install`, `clean`, `dist`, `help`. Release build uses `-std=c11 -Wall -Wextra -Wpedantic -Werror -O2`.
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).

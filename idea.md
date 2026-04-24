@@ -30,21 +30,30 @@ Chosen because:
 swatch <hex> [--size WxH] [--char CHAR] [--label] [--help] [--version]
 ```
 
-| Flag          | Default    | Meaning                                                          |
-|---------------|------------|------------------------------------------------------------------|
-| `<hex>`       | (required) | `#RRGGBB`, `RRGGBB`, `#RGB`, or `RGB`                            |
-| `--size WxH`  | `6x3`      | Block dimensions in characters                                   |
-| `--char CHAR` | `' '`      | Character to fill the block with (ANSI background still applies) |
-| `--label`     | off        | Print the normalized hex on a line below the block               |
-| `--help`      | —          | Print usage and exit 0                                           |
-| `--version`   | —          | Print `swatch X.Y.Z` and exit 0                                  |
+| Flag           | Default    | Meaning                                                          |
+|----------------|------------|------------------------------------------------------------------|
+| `<hex>`        | (required) | `#RRGGBB`, `RRGGBB`, `#RGB`, or `RGB`                            |
+| `--size WxH`   | `6x3`      | Block dimensions in characters                                   |
+| `--char CHAR`  | `' '`      | Character to fill the block with (ANSI background still applies) |
+| `--label`      | off        | Print the normalized hex on a line below the block               |
+| `--color MODE` | `auto`     | Force color mode: `auto` / `truecolor` / `256` / `none`          |
+| `--help`       | —          | Print usage and exit 0                                           |
+| `--version`    | —          | Print `swatch X.Y.Z` and exit 0                                  |
 
 ## Color mode resolution (at startup)
 
-1. If stdout is not a TTY → `none`.
-2. Else if `getenv("NO_COLOR")` is set (any value) → `none`.
-3. Else if `getenv("COLORTERM")` contains `truecolor` or `24bit` → `truecolor`.
-4. Else → `xterm256` (best-effort downgrade; 6×6×6 cube nearest-match).
+Auto-detection order:
+
+1. Not a TTY → `none`.
+2. `NO_COLOR` set → `none`.
+3. `COLORTERM` contains `truecolor` / `24bit` → `truecolor`.
+4. `TERM` matches `*-direct` → `truecolor`.
+5. Any of `WT_SESSION`, `KITTY_WINDOW_ID`, `ALACRITTY_LOG`, `KONSOLE_VERSION` set → `truecolor`.
+6. `TERM_PROGRAM` ∈ { `iTerm.app`, `vscode`, `Apple_Terminal`, `WezTerm`, `ghostty` } → `truecolor`.
+7. `TERMINAL_EMULATOR` starts with `JetBrains` → `truecolor`.
+8. otherwise → `xterm256` (best-effort; 6×6×6 cube nearest-match).
+
+`--color MODE` short-circuits the whole chain. Accepted values: `auto` (default, runs the chain above), `truecolor`, `256`, `none`.
 
 ## Architecture (deliberately split across 4 shawarma tasks)
 

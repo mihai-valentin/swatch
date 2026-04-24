@@ -17,13 +17,31 @@ $ swatch "#00AF4C"
 ## Usage
 
 ```bash
-swatch "#00AF4C"               # 6×3 block, default
-swatch 00AF4C                  # '#' optional
-swatch "#0AF"                  # short form expands to #00AAFF
+swatch "#00AF4C"                      # 6×3 block, default
+swatch 00AF4C                         # '#' optional
+swatch "#0AF"                         # short form expands to #00AAFF
 swatch "#00AF4C" --size 10x4
 swatch "#00AF4C" --char "#"
-swatch "#00AF4C" --label       # adds '#00AF4C' under the block
+swatch "#00AF4C" --label              # adds '#00AF4C' under the block
+swatch "#00AF4C" --color truecolor    # force 24-bit when auto-detection misses
+swatch "#00AF4C" --color 256          # force xterm-256 cube
+swatch "#00AF4C" --color none         # plaintext ("#00AF4C (6x3)")
 ```
+
+### Color mode resolution
+
+`auto` (default for `--color`) picks in this order:
+
+1. stdout is not a TTY → `none`.
+2. `NO_COLOR` set → `none`.
+3. `COLORTERM` contains `truecolor` / `24bit` → `truecolor`.
+4. `TERM` matches `*-direct` → `truecolor`.
+5. Any of `WT_SESSION`, `KITTY_WINDOW_ID`, `ALACRITTY_LOG`, `KONSOLE_VERSION` set → `truecolor`.
+6. `TERM_PROGRAM` ∈ { `iTerm.app`, `vscode`, `Apple_Terminal`, `WezTerm`, `ghostty` } → `truecolor`.
+7. `TERMINAL_EMULATOR` starts with `JetBrains` → `truecolor`.
+8. otherwise → `xterm256` (216-color cube; shades snap to the nearest {0, 95, 135, 175, 215, 255} step per channel).
+
+If the heuristics miss your terminal and shades look flat, pass `--color truecolor` explicitly.
 
 ### Non-TTY / `NO_COLOR` fallback
 
