@@ -32,9 +32,13 @@ tests/test_parse: tests/test_parse.c src/parse.c src/parse.h tests/test.h
 tests/test_render: tests/test_render.c src/render.c src/render.h src/parse.h tests/test.h
 	$(CC) $(CFLAGS_DEBUG) $(LDFLAGS_DEBUG) -Isrc -o $@ tests/test_render.c src/render.c
 
-test: tests/test_parse tests/test_render
+tests/test_noise: tests/test_noise.c src/noise.c src/noise.h src/render.h tests/test.h
+	$(CC) $(CFLAGS_DEBUG) $(LDFLAGS_DEBUG) -Isrc -o $@ tests/test_noise.c src/noise.c
+
+test: tests/test_parse tests/test_render tests/test_noise
 	./tests/test_parse
 	./tests/test_render
+	./tests/test_noise
 
 install: CFLAGS  := $(CFLAGS_RELEASE)
 install: LDFLAGS :=
@@ -44,7 +48,7 @@ install: swatch
 
 clean:
 	rm -f ./swatch
-	rm -f tests/test_parse tests/test_render
+	rm -f tests/test_parse tests/test_render tests/test_noise
 	find . -name '*.o' -type f -delete
 	find . -name '*.dSYM' -type d -prune -exec rm -rf {} +
 	rm -rf dist/
@@ -62,7 +66,7 @@ dist:
 help:
 	@echo "all     - Build ./swatch (release, -O2, -Werror) [default]"
 	@echo "debug   - Build ./swatch with address+undefined sanitizers"
-	@echo "test    - Build and run tests/test_parse and tests/test_render under sanitizers"
+	@echo "test    - Build and run tests/test_parse, tests/test_render, tests/test_noise under sanitizers"
 	@echo "install - Install ./swatch to \$$(PREFIX)/bin/swatch (PREFIX=/usr/local)"
 	@echo "clean   - Remove ./swatch, test binaries, *.o, *.dSYM/, dist/"
 	@echo "dist    - Produce dist/swatch-\$$(VERSION).tar.gz (VERSION=0.1.0)"

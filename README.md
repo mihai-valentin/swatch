@@ -99,6 +99,19 @@ sudo make install
 
 Requires a C11 compiler (`gcc` or `clang`) and GNU `make`. No runtime dependencies.
 
+## Animation — `swatch noise`
+
+`swatch noise` renders a fullscreen random-RGB white-noise animation in the terminal until you press Ctrl+C (or `--duration` expires). It honors `--color` (required to be `truecolor` or `256`, not `none`), `--size WxH` (defaults to the terminal's current size, falling back to 80x24), and two noise-only flags: `--fps N` (1..60, default 15) and `--duration SECONDS` (0..3600, default 0 = run until Ctrl+C).
+
+```bash
+swatch noise                          # run until Ctrl+C at 15 fps
+swatch noise --fps 30 --duration 5    # 30 fps, auto-stop after 5 seconds
+swatch noise --color 256              # force xterm-256 cube mapping
+swatch noise --size 60x20             # override the animation area
+```
+
+Requires a TTY on stdout and a color mode other than `none` — piping or redirecting output, or running with `--color none` / `NO_COLOR=1`, exits 64 with a stderr message.
+
 ## Contributing
 
 swatch is deliberately tiny — open an issue before any non-trivial change so scope stays small.

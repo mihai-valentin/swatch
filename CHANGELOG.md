@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `swatch noise` subcommand — fullscreen random-RGB white-noise animation; honors `--color`, `--size`; new `--fps` (1..60, default 15) and `--duration` (0..3600, 0 = run until Ctrl+C) flags. Refuses with exit 64 if stdout is not a TTY or color mode is `none`.
+
 ## [0.1.1] - 2026-04-24
 
 ### Fixed
