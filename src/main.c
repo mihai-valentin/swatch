@@ -2,6 +2,7 @@
 
 #include "parse.h"
 #include "render.h"
+#include "noise.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,20 +16,34 @@ static const char *prog_name(const char *argv0) {
 
 static void print_usage(FILE *out, const char *prog) {
     fprintf(out,
-        "Usage: %s <hex> [--size WxH] [--char CHAR] [--label] [--color MODE] [--help] [--version]\n"
+        "Usage: %s <hex> [options]       Render a colored square for <hex>.\n"
+        "       %s noise [options]       Random RGB white-noise animation.\n"
         "\n"
-        "  <hex>          #RRGGBB, RRGGBB, #RGB, or RGB\n"
-        "  --size WxH     Block size in characters (default 6x3, each 1..200)\n"
-        "  --char CHAR    Single character used to fill the block (default ' ')\n"
+        "Subcommands:\n"
+        "  noise          Fullscreen random-RGB white-noise animation until\n"
+        "                 Ctrl+C (or --duration expires). Requires a TTY and\n"
+        "                 a color mode other than 'none'.\n"
+        "\n"
+        "Options:\n"
+        "  <hex>          #RRGGBB, RRGGBB, #RGB, or RGB (hex form only)\n"
+        "  --size WxH     Block size in characters (default 6x3, each 1..200).\n"
+        "                 In noise mode, overrides the animation area\n"
+        "                 (default: probed from terminal, fallback 80x24).\n"
+        "  --char CHAR    Single character used to fill the block (default ' ',\n"
+        "                 hex form only)\n"
         "  --label        Print the normalized hex on a line below the block\n"
+        "                 (hex form only)\n"
         "  --color MODE   Force color mode; one of auto (default), truecolor,\n"
         "                 256, none. Use 'truecolor' when auto-detection misses\n"
         "                 your terminal and shades snap to the xterm-256 cube.\n"
+        "  --fps N        Frames per second for noise (1..60, default 15).\n"
+        "  --duration N   Seconds to run noise (0..3600, default 0 = until\n"
+        "                 Ctrl+C).\n"
         "  --help         Print this help and exit 0\n"
         "  --version      Print version and exit 0\n"
         "\n"
         "Exit codes: 0 success, 2 malformed hex, 64 usage error.\n",
-        prog);
+        prog, prog);
 }
 
 static int parse_size(const char *s, int *w_out, int *h_out) {
@@ -55,6 +70,22 @@ static int parse_size(const char *s, int *w_out, int *h_out) {
 
     *w_out = (int)w;
     *h_out = (int)h;
+    return 0;
+}
+
+static int parse_int_arg(const char *s, long min, long max, long *out) {
+    if (s == NULL || *s == '\0') {
+        return -1;
+    }
+    char *endp = NULL;
+    long v = strtol(s, &endp, 10);
+    if (endp == s || *endp != '\0') {
+        return -1;
+    }
+    if (v < min || v > max) {
+        return -1;
+    }
+    *out = v;
     return 0;
 }
 
@@ -127,19 +158,25 @@ int main(int argc, char **argv) {
 
     int width = 6;
     int height = 3;
+    int size_specified = 0;
     char fill = ' ';
     int label = 0;
     int color_forced = 0;
     swatch_color_mode_t forced_mode = SWATCH_COLOR_NONE;
+    int fps_opt = 0;
+    int duration_opt = 0;
 
-    enum { OPT_SIZE = 256, OPT_CHAR, OPT_LABEL, OPT_HELP, OPT_VERSION, OPT_COLOR };
+    enum { OPT_SIZE = 256, OPT_CHAR, OPT_LABEL, OPT_HELP, OPT_VERSION, OPT_COLOR,
+           OPT_FPS, OPT_DURATION };
     static const struct option longopts[] = {
-        {"size",    required_argument, 0, OPT_SIZE},
-        {"char",    required_argument, 0, OPT_CHAR},
-        {"label",   no_argument,       0, OPT_LABEL},
-        {"color",   required_argument, 0, OPT_COLOR},
-        {"help",    no_argument,       0, OPT_HELP},
-        {"version", no_argument,       0, OPT_VERSION},
+        {"size",     required_argument, 0, OPT_SIZE},
+        {"char",     required_argument, 0, OPT_CHAR},
+        {"label",    no_argument,       0, OPT_LABEL},
+        {"color",    required_argument, 0, OPT_COLOR},
+        {"fps",      required_argument, 0, OPT_FPS},
+        {"duration", required_argument, 0, OPT_DURATION},
+        {"help",     no_argument,       0, OPT_HELP},
+        {"version",  no_argument,       0, OPT_VERSION},
         {0, 0, 0, 0}
     };
 
@@ -152,6 +189,7 @@ int main(int argc, char **argv) {
                         optarg != NULL ? optarg : "");
                 return 64;
             }
+            size_specified = 1;
             break;
         case OPT_CHAR:
             if (optarg == NULL || optarg[0] == '\0' || optarg[1] != '\0') {
@@ -179,6 +217,26 @@ int main(int argc, char **argv) {
             }
             break;
         }
+        case OPT_FPS: {
+            long v = 0;
+            if (parse_int_arg(optarg, 1, 60, &v) != 0) {
+                fprintf(stderr, "swatch: invalid --fps '%s' (expected integer 1..60)\n",
+                        optarg != NULL ? optarg : "");
+                return 64;
+            }
+            fps_opt = (int)v;
+            break;
+        }
+        case OPT_DURATION: {
+            long v = 0;
+            if (parse_int_arg(optarg, 0, 3600, &v) != 0) {
+                fprintf(stderr, "swatch: invalid --duration '%s' (expected integer 0..3600)\n",
+                        optarg != NULL ? optarg : "");
+                return 64;
+            }
+            duration_opt = (int)v;
+            break;
+        }
         case OPT_HELP:
             print_usage(stdout, prog);
             return 0;
@@ -190,6 +248,22 @@ int main(int argc, char **argv) {
             print_usage(stderr, prog);
             return 64;
         }
+    }
+
+    if (optind < argc && strcmp(argv[optind], "noise") == 0) {
+        optind++;
+        if (optind != argc) {
+            fprintf(stderr, "swatch: 'noise' takes no positional arguments\n");
+            return 64;
+        }
+        swatch_noise_opts_t n_opts = {
+            .width            = size_specified ? width : 0,
+            .height           = size_specified ? height : 0,
+            .fps              = fps_opt,
+            .duration_seconds = duration_opt,
+            .mode             = color_forced ? forced_mode : resolve_color_mode()
+        };
+        return swatch_noise_run(n_opts, stdout);
     }
 
     int positional = argc - optind;

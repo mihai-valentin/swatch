@@ -55,6 +55,28 @@ Auto-detection order:
 
 `--color MODE` short-circuits the whole chain. Accepted values: `auto` (default, runs the chain above), `truecolor`, `256`, `none`.
 
+### Noise subcommand (v0.2.0 candidate)
+
+```text
+swatch noise [--size WxH] [--color MODE] [--fps N] [--duration SECONDS]
+```
+
+`swatch noise` renders a fullscreen random-RGB white-noise animation and runs until `SIGINT` / `SIGTERM` (or `--duration` expires). It is an additive subcommand — the existing `swatch <hex>` form is unchanged.
+
+| Flag              | Default     | Meaning                                                                |
+|-------------------|-------------|------------------------------------------------------------------------|
+| `--size WxH`      | auto        | Animation area; probed via `TIOCGWINSZ`, fall back to `80x24`          |
+| `--color MODE`    | `auto`      | Required to resolve to `truecolor` or `256` — `none` is refused        |
+| `--fps N`         | `15`        | Frames per second, clamped to `1..60`                                  |
+| `--duration N`    | `0`         | Seconds to run; `0` means "until Ctrl+C", otherwise clamped to `1..3600` |
+
+Requirements:
+
+- stdout must be a TTY — piping/redirecting exits `64`.
+- Color mode must not be `none` — exits `64`.
+- `SIGINT` / `SIGTERM` trigger a clean exit: restore cursor, reset SGR, exit `0`.
+- An `atexit` hook restores the cursor even if the process dies some other way.
+
 ## Architecture (deliberately split across 4 shawarma tasks)
 
 ```text
