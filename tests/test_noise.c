@@ -18,14 +18,14 @@ static unsigned test_rng(void) {
     return test_rng_state;
 }
 
-static void draw_to_buf(swatch_color_mode_t mode, int w, int h,
+static void draw_to_buf(swatch_color_mode_t mode, int w, int h, int bw,
                         char *buf, size_t buflen) {
     memset(buf, 0, buflen);
     FILE *f = fmemopen(buf, buflen, "w");
     if (f == NULL) {
         return;
     }
-    swatch_noise_draw_frame(mode, w, h, test_rng, f);
+    swatch_noise_draw_frame(mode, w, h, bw, test_rng, f);
     fclose(f);
 }
 
@@ -63,7 +63,7 @@ static void test_draw_frame_truecolor_1x1(void) {
 
     test_rng_seed(0);
     char buf[256];
-    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 1, 1, buf, sizeof(buf));
+    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 1, 1, 0, buf, sizeof(buf));
     ASSERT_STR_EQ(buf, expected, "truecolor 1x1 frame");
 }
 
@@ -91,7 +91,7 @@ static void test_draw_frame_truecolor_3x2(void) {
 
     test_rng_seed(42);
     char buf[1024];
-    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 3, 2, buf, sizeof(buf));
+    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 3, 2, 0, buf, sizeof(buf));
     ASSERT_STR_EQ(buf, expected, "truecolor 3x2 frame");
 }
 
@@ -110,17 +110,58 @@ static void test_draw_frame_xterm256_1x1(void) {
 
     test_rng_seed(7);
     char buf[256];
-    draw_to_buf(SWATCH_COLOR_XTERM256, 1, 1, buf, sizeof(buf));
+    draw_to_buf(SWATCH_COLOR_XTERM256, 1, 1, 0, buf, sizeof(buf));
     ASSERT_STR_EQ(buf, expected, "xterm256 1x1 frame");
 }
 
 static void test_draw_frame_none_emits_nothing_or_safe(void) {
     test_rng_seed(0);
     char buf[256];
-    draw_to_buf(SWATCH_COLOR_NONE, 4, 2, buf, sizeof(buf));
+    draw_to_buf(SWATCH_COLOR_NONE, 4, 2, 0, buf, sizeof(buf));
     for (size_t i = 0; i < sizeof(buf); i++) {
         ASSERT_TRUE(buf[i] != '\x1b', "no ANSI escape bytes in NONE-mode output");
     }
+}
+
+static void test_draw_frame_bw_truecolor_1x1(void) {
+    test_rng_seed(0);
+    unsigned bit = test_rng() & 1u;
+
+    const char *cell = bit ? "\x1b[48;2;255;255;255m " : "\x1b[48;2;0;0;0m ";
+    char expected[128];
+    snprintf(expected, sizeof(expected), "\x1b[H%s\x1b[0m", cell);
+
+    test_rng_seed(0);
+    char buf[256];
+    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 1, 1, 1, buf, sizeof(buf));
+    ASSERT_STR_EQ(buf, expected, "bw truecolor 1x1 frame");
+}
+
+static void test_draw_frame_bw_xterm256_1x1(void) {
+    test_rng_seed(0);
+    unsigned bit = test_rng() & 1u;
+
+    const char *cell = bit ? "\x1b[48;5;231m " : "\x1b[48;5;16m ";
+    char expected[128];
+    snprintf(expected, sizeof(expected), "\x1b[H%s\x1b[0m", cell);
+
+    test_rng_seed(0);
+    char buf[256];
+    draw_to_buf(SWATCH_COLOR_XTERM256, 1, 1, 1, buf, sizeof(buf));
+    ASSERT_STR_EQ(buf, expected, "bw xterm256 1x1 frame");
+}
+
+static void test_draw_frame_bw_is_deterministic_under_fixed_seed(void) {
+    char buf_a[512];
+    char buf_b[512];
+
+    test_rng_seed(12345);
+    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 3, 2, 1, buf_a, sizeof(buf_a));
+
+    test_rng_seed(12345);
+    draw_to_buf(SWATCH_COLOR_TRUECOLOR, 3, 2, 1, buf_b, sizeof(buf_b));
+
+    ASSERT_STR_EQ(buf_a, buf_b, "bw frame is deterministic for a fixed rng seed");
 }
 
 int main(void) {
@@ -128,5 +169,8 @@ int main(void) {
     RUN_TEST(test_draw_frame_truecolor_3x2);
     RUN_TEST(test_draw_frame_xterm256_1x1);
     RUN_TEST(test_draw_frame_none_emits_nothing_or_safe);
+    RUN_TEST(test_draw_frame_bw_truecolor_1x1);
+    RUN_TEST(test_draw_frame_bw_xterm256_1x1);
+    RUN_TEST(test_draw_frame_bw_is_deterministic_under_fixed_seed);
     TEST_SUMMARY();
 }

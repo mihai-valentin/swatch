@@ -9,6 +9,7 @@ typedef struct {
     int                 height;
     int                 fps;
     int                 duration_seconds;
+    int                 bw;
     swatch_color_mode_t mode;
 } swatch_noise_opts_t;
 
@@ -35,8 +36,14 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out);
  * into the 6x6x6 xterm color cube. For SWATCH_COLOR_NONE nothing is
  * emitted (no escapes) so that accidental invocation cannot corrupt
  * terminals that can't handle them.
+ *
+ * When `bw` is non-zero, the palette is restricted to pure black (0,0,0)
+ * and pure white (255,255,255) chosen 50/50 per cell. rng() is called
+ * exactly ONCE per cell and the low bit selects the color. In XTERM256
+ * mode the two colors map directly to cube indices 16 (black) and
+ * 231 (white).
  */
 void swatch_noise_draw_frame(swatch_color_mode_t mode, int width, int height,
-                             unsigned (*rng)(void), FILE *out);
+                             int bw, unsigned (*rng)(void), FILE *out);
 
 #endif

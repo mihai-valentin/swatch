@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `swatch noise` subcommand — fullscreen random-RGB white-noise animation; honors `--color`, `--size`; new `--fps` (1..60, default 15) and `--duration` (0..3600, 0 = run until Ctrl+C) flags. Refuses with exit 64 if stdout is not a TTY or color mode is `none`.
+- `swatch noise --bw` flag for black-and-white-only (1-bit) noise; palette is pure black/white per cell, 50/50 random.
 
 ### Fixed
 
