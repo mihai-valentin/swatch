@@ -5,3 +5,8 @@
 /tests/test_render
 /dist/
 *.dSYM/
+
+# Shawarma orchestrator state (transient, DB-owned)
+/.agent-orch/shawarma.db
+/.agent-orch/tasks.bak/
+/.worktrees/
