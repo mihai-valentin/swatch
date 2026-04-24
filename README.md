@@ -1,6 +1,6 @@
 # swatch
 
-![CI](REPLACE_WITH_REMOTE_URL/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/mihai-valentin/swatch/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Tiny CLI that prints a colored square for a hex color.
@@ -78,11 +78,11 @@ Release binaries are published to GitHub Releases on every `v*` tag.
 
 ```bash
 # Linux x86_64
-curl -fsSL REPLACE_WITH_REMOTE_URL/releases/latest/download/swatch-v0.1.0-linux-x64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.1.0-linux-x64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 
 # macOS (Apple Silicon or Intel)
-curl -fsSL REPLACE_WITH_REMOTE_URL/releases/latest/download/swatch-v0.1.0-macos-arm64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.1.0-macos-arm64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 ```
 
@@ -91,7 +91,7 @@ Pre-built binaries only exist after the first `v*` tag has been pushed. Before t
 ## Installation — from source
 
 ```bash
-git clone REPLACE_WITH_REMOTE_URL.git
+git clone https://github.com/mihai-valentin/swatch.git
 cd swatch
 make
 sudo make install

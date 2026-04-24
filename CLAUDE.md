@@ -25,7 +25,7 @@ You may read from `../` freely. **Do not modify files in the xlnf root from this
 ## Operating rules (inherited from root)
 
 - Follow naming / branching / env-var conventions from `../CLAUDE.md`
-- Default branch is `main` (set by `git init -b main` at scaffold time)
+- Default branch is `master` (matches the GitHub remote)
 - swatch is a CLI — no Dockerfile, no health check, no stdout-logging ceremony. Install from source via `make install`. Tagged release binaries are published via `.github/workflows/release.yml` on `v*` pushes.
 - Conventional commits
 - Dispatch heavy lifting via Shawarma task manifests under `./.agent-orch/tasks/` — the skill card lives at `.claude/skills/shawarma/SKILL.md`

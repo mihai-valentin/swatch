@@ -16,4 +16,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
-[0.1.0]: REPLACE_WITH_REMOTE_URL/releases/tag/v0.1.0
+[0.1.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.0
