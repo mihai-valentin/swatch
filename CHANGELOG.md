@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-04-24
+
+### Fixed
+
+- `make install` on macOS: the `install -D` flag was GNU-specific and fails on BSD `install` (macOS) where `-D` takes a path argument. Replaced with `mkdir -p $(DESTDIR)$(PREFIX)/bin && install -m 755 ...` — portable across GNU coreutils and BSD install, and adds `DESTDIR` support for staged/packaged installs.
+
 ## [0.1.0] - 2026-04-24
 
 ### Added
@@ -16,4 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.1.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.0
