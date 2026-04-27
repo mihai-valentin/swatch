@@ -78,11 +78,11 @@ Release binaries are published to GitHub Releases on every `v*` tag.
 
 ```bash
 # Linux x86_64
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.1-linux-x64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.2-linux-x64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 
 # macOS (Apple Silicon or Intel)
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.1-macos-arm64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.2-macos-arm64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 ```
 

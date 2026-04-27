@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-04-27
+
+### Fixed
+
+- macOS build: `src/window_x11.c` lacked a non-empty translation-unit marker, so on `__APPLE__` (every `#if` guard evaluated false) the preprocessed file was empty and clang failed with `error: ISO C requires a translation unit to contain at least one declaration [-Werror,-Wempty-translation-unit]`. Added the same `typedef int swatch_window_x11_unit_;` shim that `window_win32.c` and `window_cocoa.c` already carry. Same class of bug as v0.4.1, different file.
+
 ## [0.4.1] - 2026-04-27
 
 ### Fixed
@@ -64,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.4.2]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.2
 [0.4.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.0
 [0.3.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.1

@@ -1,5 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 
+/* Non-empty translation unit marker — ISO C forbids empty TUs under -Wpedantic.
+ * On macOS (__APPLE__) and Windows (_WIN32), every #if block below evaluates
+ * false and the file would otherwise preprocess to nothing. */
+typedef int swatch_window_x11_unit_;
+
 #if (defined(__linux__) || defined(__unix__)) && !defined(__APPLE__) && defined(SWATCH_HAVE_X11)
 
 #include "window.h"
