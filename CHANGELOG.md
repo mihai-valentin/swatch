@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-27
+
+### Added
+
+- `swatch window` subcommand — runs the noise animation in a native OS window using only system GUI libraries: Win32 (`user32`/`gdi32`) on Windows, X11 (`libX11`) on Linux/Unix, Cocoa via `objc_msgSend` (from a pure-C source file, no Objective-C compilation) on macOS. Honors `--size WxH` (in pixels, default 640x480, width 64..3840, height 64..2160), `--fps`, `--duration`, `--bw`. `--color`, `--char`, `--label` are accepted but ignored in window mode.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added
@@ -33,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.3.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.0

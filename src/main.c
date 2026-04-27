@@ -3,6 +3,7 @@
 #include "parse.h"
 #include "render.h"
 #include "noise.h"
+#include "window.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,33 +19,36 @@ static void print_usage(FILE *out, const char *prog) {
     fprintf(out,
         "Usage: %s <hex> [options]       Render a colored square for <hex>.\n"
         "       %s noise [options]       Random RGB white-noise animation.\n"
+        "       %s window [options]      Noise animation in a native window.\n"
         "\n"
         "Subcommands:\n"
-        "  noise          Fullscreen random-RGB white-noise animation until\n"
-        "                 Ctrl+C (or --duration expires). Requires a TTY and\n"
-        "                 a color mode other than 'none'.\n"
+        "  noise          Fullscreen terminal noise animation until Ctrl+C\n"
+        "                 (or --duration expires). Requires a TTY and a\n"
+        "                 color mode other than 'none'.\n"
+        "  window         Same noise animation, drawn in a native OS window\n"
+        "                 (Win32 / Cocoa / X11). No third-party libraries.\n"
         "\n"
         "Options:\n"
         "  <hex>          #RRGGBB, RRGGBB, #RGB, or RGB (hex form only)\n"
-        "  --size WxH     Block size in characters (default 6x3, each 1..200).\n"
-        "                 In noise mode, overrides the animation area\n"
-        "                 (default: probed from terminal, fallback 80x24).\n"
+        "  --size WxH     Block size in characters for hex/noise (each 1..3840),\n"
+        "                 default 6x3 for hex, terminal size for noise.\n"
+        "                 In window mode, dimensions are PIXELS (default 640x480,\n"
+        "                 width 64..3840, height 64..2160).\n"
         "  --char CHAR    Single character used to fill the block (default ' ',\n"
         "                 hex form only)\n"
         "  --label        Print the normalized hex on a line below the block\n"
         "                 (hex form only)\n"
         "  --color MODE   Force color mode; one of auto (default), truecolor,\n"
-        "                 256, none. Use 'truecolor' when auto-detection misses\n"
-        "                 your terminal and shades snap to the xterm-256 cube.\n"
-        "  --fps N        Frames per second for noise (1..60, default 15).\n"
-        "  --duration N   Seconds to run noise (0..3600, default 0 = until\n"
-        "                 Ctrl+C).\n"
-        "  --bw           Black-and-white noise only (no color chroma, noise only).\n"
+        "                 256, none. Ignored in window mode (always 24-bit).\n"
+        "  --fps N        Frames per second for noise/window (1..60, default 15).\n"
+        "  --duration N   Seconds to run noise/window (0..3600, default 0 =\n"
+        "                 until Ctrl+C / window close).\n"
+        "  --bw           Black-and-white noise only (noise/window).\n"
         "  --help         Print this help and exit 0\n"
         "  --version      Print version and exit 0\n"
         "\n"
         "Exit codes: 0 success, 2 malformed hex, 64 usage error.\n",
-        prog, prog);
+        prog, prog, prog);
 }
 
 static int parse_size(const char *s, int *w_out, int *h_out) {
@@ -65,7 +69,7 @@ static int parse_size(const char *s, int *w_out, int *h_out) {
     if (endp == x + 1 || *endp != '\0') {
         return -1;
     }
-    if (w < 1 || w > 200 || h < 1 || h > 200) {
+    if (w < 1 || w > 3840 || h < 1 || h > 3840) {
         return -1;
     }
 
@@ -188,7 +192,7 @@ int main(int argc, char **argv) {
         switch (c) {
         case OPT_SIZE:
             if (parse_size(optarg, &width, &height) != 0) {
-                fprintf(stderr, "swatch: invalid --size '%s' (expected WxH, each 1..200)\n",
+                fprintf(stderr, "swatch: invalid --size '%s' (expected WxH, each 1..3840)\n",
                         optarg != NULL ? optarg : "");
                 return 64;
             }
@@ -247,7 +251,7 @@ int main(int argc, char **argv) {
             print_usage(stdout, prog);
             return 0;
         case OPT_VERSION:
-            printf("swatch 0.1.0\n");
+            printf("swatch 0.3.0\n");
             return 0;
         case '?':
         default:
@@ -271,6 +275,22 @@ int main(int argc, char **argv) {
             .mode             = color_forced ? forced_mode : resolve_color_mode()
         };
         return swatch_noise_run(n_opts, stdout);
+    }
+
+    if (optind < argc && strcmp(argv[optind], "window") == 0) {
+        optind++;
+        if (optind != argc) {
+            fprintf(stderr, "swatch: 'window' takes no positional arguments\n");
+            return 64;
+        }
+        swatch_window_opts_t w_opts = {
+            .width            = size_specified ? width  : 0,
+            .height           = size_specified ? height : 0,
+            .fps              = fps_opt,
+            .duration_seconds = duration_opt,
+            .bw               = bw_opt
+        };
+        return swatch_window_run(w_opts);
     }
 
     int positional = argc - optind;

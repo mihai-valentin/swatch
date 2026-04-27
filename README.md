@@ -78,11 +78,11 @@ Release binaries are published to GitHub Releases on every `v*` tag.
 
 ```bash
 # Linux x86_64
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.1.0-linux-x64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.0-linux-x64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 
 # macOS (Apple Silicon or Intel)
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.1.0-macos-arm64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.0-macos-arm64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 ```
 
@@ -116,6 +116,25 @@ swatch noise --bw                     # 1-bit black-and-white noise
 Requires a TTY on stdout and a color mode other than `none` — piping or redirecting output, or running with `--color none` / `NO_COLOR=1`, exits 64 with a stderr message.
 
 Uses the alternate screen buffer, so Ctrl+C (or `--duration` expiry) leaves your scrollback intact.
+
+## Native window — `swatch window`
+
+`swatch window` runs the same noise animation as `swatch noise`, but inside a native OS window rather than the terminal. Honors `--size WxH` (in pixels, default 640x480, width 64..3840, height 64..2160), `--fps N`, `--duration N`, and `--bw`. `--color`, `--char`, `--label` are accepted but ignored — windows are always 24-bit RGB.
+
+```bash
+swatch window                          # 640x480, 15 fps, until you close it
+swatch window --size 800x600
+swatch window --bw --duration 5        # binary noise, auto-stop after 5s
+swatch window --fps 30
+```
+
+Backends use only system libraries — no third-party dependencies:
+
+- **Windows** — Win32 (`user32`, `gdi32`).
+- **Linux / Unix** — X11 (`libX11`). Requires X11 development headers at compile time (`apt install libx11-dev` / `dnf install libX11-devel`); on Wayland-only setups, ensure XWayland is available at runtime.
+- **macOS** — Cocoa via `objc_msgSend` from a pure-C source file (no Objective-C compilation), linked against `AppKit` and `CoreGraphics` system frameworks.
+
+Closing the window (or `--duration` expiry, or Ctrl+C in the launching console on Windows) exits `0`. Exit `1` on platform errors (cannot open X display, cannot create window). Exit `64` on usage errors (out-of-range `--size`, stray positional argument).
 
 ## Contributing
 

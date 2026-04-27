@@ -78,6 +78,25 @@ Requirements:
 - `SIGINT` / `SIGTERM` trigger a clean exit: restore cursor, reset SGR, exit `0`.
 - An `atexit` hook restores the cursor even if the process dies some other way.
 
+### Window subcommand (v0.3.0)
+
+```text
+swatch window [--size WxH] [--fps N] [--duration SECONDS] [--bw]
+```
+
+`swatch window` runs the same noise animation as `swatch noise`, but in a native OS window instead of in the terminal. No third-party libraries — uses Win32 (`user32`/`gdi32`) on Windows, X11 (`libX11`) on Linux/Unix, and Cocoa (via `objc_msgSend` from a `.c` file, no Objective-C source) on macOS.
+
+| Flag           | Default     | Meaning                                                              |
+|----------------|-------------|----------------------------------------------------------------------|
+| `--size WxH`   | `640x480`   | Window dimensions in PIXELS (width 64..3840, height 64..2160)        |
+| `--fps N`      | `15`        | Frames per second, clamped to `1..60`                                |
+| `--duration N` | `0`         | Seconds to run; `0` = until the user closes the window               |
+| `--bw`         | off         | Black-and-white noise only (1-bit palette)                           |
+
+`--color`, `--char`, `--label` are accepted but ignored — windows are always 24-bit RGB and have no character cell or label below.
+
+Exit codes: `64` for usage errors (out-of-range size, stray positional argument); `1` for platform errors (cannot open X display, cannot create window). Closing the window or exhausting `--duration` exits `0`.
+
 ## Architecture (deliberately split across 4 shawarma tasks)
 
 ```text
@@ -118,7 +137,7 @@ Requirements:
 
 - No packaging (Homebrew / deb / rpm). GitHub Releases publishes tagged linux and macos tarballs via `.github/workflows/release.yml`.
 - No configuration file, no theme presets, no palette mode, no image output.
-- No Windows port (Unix-only — POSIX `getopt_long` + `isatty`).
+- Note: Windows support is in scope for `swatch window` only — the terminal-mode `swatch <hex>` and `swatch noise` paths still depend on POSIX `getopt_long` and `isatty`, so building on MSVC requires a getopt shim. MinGW works out of the box.
 - No man page. `--help` output is the documentation.
 - No npm wrapper. This is a C tool; install via `make install`.
 

@@ -37,7 +37,7 @@ You may read from `../` freely. **Do not modify files in the xlnf root from this
 - Strict warnings: `-Wall -Wextra -Wpedantic -Werror`
 - Debug target builds with `-fsanitize=address,undefined -g -O0`; release target with `-O2`
 - Headers guarded with `#ifndef SWATCH_<NAME>_H`
-- No external dependencies — libc + POSIX only
+- No third-party dependencies — libc, POSIX, and system GUI libraries (Win32 `user32`/`gdi32`; X11 `libX11` on Linux; Cocoa via `objc_msgSend` on macOS) only
 - Test harness is a tiny hand-rolled `ASSERT_*` / `RUN_TEST` set in `tests/test.h`; do NOT introduce Unity, Check, greatest, etc.
 
 ## Scope discipline
