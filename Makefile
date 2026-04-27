@@ -1,6 +1,6 @@
 CC ?= cc
 PREFIX ?= /usr/local
-VERSION ?= 0.4.0
+VERSION ?= 0.4.1
 
 CFLAGS_BASE    := -std=c11 -Wall -Wextra -Wpedantic -Werror
 CFLAGS_RELEASE := $(CFLAGS_BASE) -O2

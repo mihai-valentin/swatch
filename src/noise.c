@@ -51,6 +51,34 @@ static unsigned rand_unsigned(void) {
     return (unsigned)rand();
 }
 
+/*
+ * Sleep until the given absolute CLOCK_MONOTONIC deadline.
+ *
+ * Linux/glibc has clock_nanosleep(TIMER_ABSTIME, ...); macOS shipped
+ * clock_gettime in 10.12 but never added clock_nanosleep, so we fall back
+ * to computing the remaining interval and nanosleep()ing that. Returns
+ * immediately if the deadline is already in the past.
+ */
+static void sleep_until_monotonic(const struct timespec *deadline) {
+#if defined(__APPLE__)
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    long sec_diff  = (long)(deadline->tv_sec  - now.tv_sec);
+    long nsec_diff = (long)(deadline->tv_nsec - now.tv_nsec);
+    if (nsec_diff < 0) {
+        sec_diff  -= 1;
+        nsec_diff += 1000000000L;
+    }
+    if (sec_diff < 0 || (sec_diff == 0 && nsec_diff <= 0)) {
+        return;
+    }
+    struct timespec remaining = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
+    nanosleep(&remaining, NULL);
+#else
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, deadline, NULL);
+#endif
+}
+
 void swatch_noise_draw_frame(swatch_color_mode_t mode, int width, int height,
                              int bw, unsigned (*rng)(void), FILE *out) {
     if (out == NULL || width <= 0 || height <= 0 || rng == NULL) {
@@ -181,7 +209,7 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
             deadline.tv_nsec -= 1000000000L;
             deadline.tv_sec  += 1;
         }
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL);
+        sleep_until_monotonic(&deadline);
 
         frames_drawn++;
     }

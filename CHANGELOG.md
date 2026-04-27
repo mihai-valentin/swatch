@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-04-27
+
+### Fixed
+
+- macOS build: the v0.4.0 frame-pacing rework called `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ...)`, but Apple shipped `clock_gettime` in macOS 10.12 without ever adding `clock_nanosleep`. The build failed with `error: call to undeclared function 'clock_nanosleep'`. Both `noise.c` and `window_cocoa.c` now compute the remaining interval against `CLOCK_MONOTONIC` and fall back to `nanosleep()` on `__APPLE__`. Linux/glibc still uses `clock_nanosleep(TIMER_ABSTIME)` directly.
+
 ## [0.4.0] - 2026-04-27
 
 ### Added
@@ -58,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.4.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.0
 [0.3.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.1
 [0.3.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.0

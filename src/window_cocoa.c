@@ -70,6 +70,24 @@ static void advance_deadline(struct timespec *deadline, long interval_ns) {
     }
 }
 
+/* macOS has clock_gettime (since 10.12) but no clock_nanosleep. Compute the
+ * remaining interval from CLOCK_MONOTONIC and nanosleep that. */
+static void sleep_until_monotonic(const struct timespec *deadline) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    long sec_diff  = (long)(deadline->tv_sec  - now.tv_sec);
+    long nsec_diff = (long)(deadline->tv_nsec - now.tv_nsec);
+    if (nsec_diff < 0) {
+        sec_diff  -= 1;
+        nsec_diff += 1000000000L;
+    }
+    if (sec_diff < 0 || (sec_diff == 0 && nsec_diff <= 0)) {
+        return;
+    }
+    struct timespec remaining = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
+    nanosleep(&remaining, NULL);
+}
+
 /* Convenience for sending zero-arg selectors that return id. */
 static inline id msg_id(id recv, SEL sel) {
     return ((id (*)(id, SEL))objc_msgSend)(recv, sel);
@@ -263,7 +281,7 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
         /* Absolute-deadline pacing: target the next frame at deadline += interval. */
         advance_deadline(&deadline, interval_ns);
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL);
+        sleep_until_monotonic(&deadline);
 
         frames_drawn++;
         if (total_frames >= 0 && frames_drawn >= total_frames) break;
