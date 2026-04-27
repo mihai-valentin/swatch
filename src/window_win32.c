@@ -21,8 +21,12 @@ static int           s_height = 0;
 static uint8_t      *s_pixels = NULL;
 static BITMAPINFO    s_bmi;
 
-static unsigned rand_unsigned(void) {
-    return (unsigned)rand();
+static uint64_t seed_state(void) {
+    uint64_t s = ((uint64_t)time(NULL) << 32)
+               ^ (uint64_t)GetCurrentProcessId()
+               ^ (uint64_t)(uintptr_t)&s;
+    if (s == 0) s = 0x9E3779B97F4A7C15ULL;
+    return s;
 }
 
 static BOOL WINAPI on_ctrl(DWORD type) {
@@ -94,7 +98,7 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
     int fps = opts.fps;
     if (fps <= 0) fps = 15;
-    if (fps > 60) fps = 60;
+    if (fps > 120) fps = 120;
 
     int duration = opts.duration_seconds;
     if (duration < 0) duration = 0;
@@ -159,11 +163,15 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
     SetConsoleCtrlHandler(on_ctrl, TRUE);
 
-    srand((unsigned)time(NULL) ^ (unsigned)GetCurrentProcessId());
+    uint64_t rng_state = seed_state();
 
     long total_frames = (duration > 0) ? ((long)duration * (long)fps) : -1;
     long frames_drawn = 0;
-    DWORD frame_ms = (DWORD)(1000 / fps);
+
+    LARGE_INTEGER qpc_freq, qpc_deadline, qpc_now;
+    QueryPerformanceFrequency(&qpc_freq);
+    QueryPerformanceCounter(&qpc_deadline);
+    LONGLONG interval_ticks = qpc_freq.QuadPart / fps;
 
     while (!InterlockedCompareExchange(&s_stop, 0, 0)) {
         MSG msg;
@@ -178,10 +186,22 @@ int swatch_window_run(swatch_window_opts_t opts) {
         if (InterlockedCompareExchange(&s_stop, 0, 0)) break;
 
         swatch_window_fill_frame(s_pixels, s_width, s_height,
-                                 opts.bw, rand_unsigned);
+                                 opts.bw, &rng_state);
         InvalidateRect(hwnd, NULL, FALSE);
         UpdateWindow(hwnd);
-        Sleep(frame_ms);
+
+        /* Absolute-deadline pacing via QPC. Sleep() granularity is OS-tick
+         * (typically ~15ms unless timeBeginPeriod was called); accept the
+         * jitter rather than busy-wait. */
+        qpc_deadline.QuadPart += interval_ticks;
+        QueryPerformanceCounter(&qpc_now);
+        if (qpc_now.QuadPart < qpc_deadline.QuadPart) {
+            LONGLONG diff_us = ((qpc_deadline.QuadPart - qpc_now.QuadPart)
+                                * 1000000LL) / qpc_freq.QuadPart;
+            if (diff_us > 1000) {
+                Sleep((DWORD)(diff_us / 1000));
+            }
+        }
 
         frames_drawn++;
         if (total_frames >= 0 && frames_drawn >= total_frames) break;

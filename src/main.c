@@ -40,7 +40,7 @@ static void print_usage(FILE *out, const char *prog) {
         "                 (hex form only)\n"
         "  --color MODE   Force color mode; one of auto (default), truecolor,\n"
         "                 256, none. Ignored in window mode (always 24-bit).\n"
-        "  --fps N        Frames per second for noise/window (1..60, default 15).\n"
+        "  --fps N        Frames per second for noise/window (1..120, default 15).\n"
         "  --duration N   Seconds to run noise/window (0..3600, default 0 =\n"
         "                 until Ctrl+C / window close).\n"
         "  --bw           Black-and-white noise only (noise/window).\n"
@@ -226,8 +226,8 @@ int main(int argc, char **argv) {
         }
         case OPT_FPS: {
             long v = 0;
-            if (parse_int_arg(optarg, 1, 60, &v) != 0) {
-                fprintf(stderr, "swatch: invalid --fps '%s' (expected integer 1..60)\n",
+            if (parse_int_arg(optarg, 1, 120, &v) != 0) {
+                fprintf(stderr, "swatch: invalid --fps '%s' (expected integer 1..120)\n",
                         optarg != NULL ? optarg : "");
                 return 64;
             }
@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
             print_usage(stdout, prog);
             return 0;
         case OPT_VERSION:
-            printf("swatch 0.3.1\n");
+            printf("swatch 0.4.0\n");
             return 0;
         case '?':
         default:

@@ -17,7 +17,7 @@ typedef struct {
  * Run the noise animation.
  *
  * width/height <= 0 → probe terminal via TIOCGWINSZ, fall back to 80x24.
- * fps 0 → default 15; otherwise clamped to 1..60.
+ * fps 0 → default 15; otherwise clamped to 1..120.
  * duration_seconds 0 → run until SIGINT/SIGTERM; otherwise clamped to 1..3600.
  *
  * Returns 0 on clean exit, 64 on refusal

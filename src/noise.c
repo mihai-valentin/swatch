@@ -140,7 +140,7 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
 
     int fps = opts.fps;
     if (fps <= 0) fps = 15;
-    if (fps > 60) fps = 60;
+    if (fps > 120) fps = 120;
 
     int duration = opts.duration_seconds;
     if (duration < 0) duration = 0;
@@ -164,15 +164,25 @@ int swatch_noise_run(swatch_noise_opts_t opts, FILE *out) {
 
     long total_frames = (duration > 0) ? ((long)duration * (long)fps) : -1;
     long frames_drawn = 0;
-    struct timespec delay = {
-        .tv_sec = 0,
-        .tv_nsec = 1000000000L / fps
-    };
+    long interval_ns = 1000000000L / fps;
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_MONOTONIC, &deadline);
 
     while (!swatch_noise_stop && (total_frames < 0 || frames_drawn < total_frames)) {
         swatch_noise_draw_frame(opts.mode, width, height, opts.bw, rand_unsigned, out);
         fflush(out);
-        nanosleep(&delay, NULL);
+
+        /* Absolute-deadline pacing: target the next frame at deadline += interval,
+         * not "sleep interval after work". When a frame runs long the next
+         * sleep returns immediately and we render again at the work-rate ceiling. */
+        deadline.tv_nsec += interval_ns;
+        while (deadline.tv_nsec >= 1000000000L) {
+            deadline.tv_nsec -= 1000000000L;
+            deadline.tv_sec  += 1;
+        }
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL);
+
         frames_drawn++;
     }
 

@@ -78,11 +78,11 @@ Release binaries are published to GitHub Releases on every `v*` tag.
 
 ```bash
 # Linux x86_64
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.1-linux-x64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.0-linux-x64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 
 # macOS (Apple Silicon or Intel)
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.1-macos-arm64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.4.0-macos-arm64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 ```
 
@@ -101,7 +101,7 @@ Requires a C11 compiler (`gcc` or `clang`) and GNU `make`. No runtime dependenci
 
 ## Animation — `swatch noise`
 
-`swatch noise` renders a fullscreen random-RGB white-noise animation in the terminal until you press Ctrl+C (or `--duration` expires). It honors `--color` (required to be `truecolor` or `256`, not `none`), `--size WxH` (defaults to the terminal's current size, falling back to 80x24), and two noise-only flags: `--fps N` (1..60, default 15) and `--duration SECONDS` (0..3600, default 0 = run until Ctrl+C).
+`swatch noise` renders a fullscreen random-RGB white-noise animation in the terminal until you press Ctrl+C (or `--duration` expires). It honors `--color` (required to be `truecolor` or `256`, not `none`), `--size WxH` (defaults to the terminal's current size, falling back to 80x24), and two noise-only flags: `--fps N` (1..120, default 15) and `--duration SECONDS` (0..3600, default 0 = run until Ctrl+C).
 
 ```bash
 swatch noise                          # run until Ctrl+C at 15 fps

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-27
+
+### Added
+
+- `--fps` cap raised from 60 to 120 (range is now `1..120`, default still 15). Applies to both `swatch noise` and `swatch window`.
+
+### Changed
+
+- `swatch window` now uses an inlined xorshift64 PRNG (Marsaglia, 2003) instead of libc `rand()` for the per-pixel fill. Eliminates the per-call mutex in glibc/msvcrt rand and the function-pointer indirection that prevented inlining; per-frame fill at 1920×1080 drops from a `rand()`-bound ~100 ms to ~5 ms (measured `-O2`, ~20× faster on the fill alone). Pixel writes are now 32-bit BGRA stores (`uint32_t`) instead of four byte stores, which lets `-O2` emit a single MOV per pixel.
+- Frame pacing across `swatch noise` and `swatch window` switched from `nanosleep(interval)` after work to absolute-deadline `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ...)` (POSIX) and `QueryPerformanceCounter` + `Sleep` (Win32). Previously the cycle was `render + sleep`, so a 50 ms render at 60 fps target produced ~15 effective fps; now the target is honored up to the work-rate ceiling and frames don't compound lag. Most user-visible at full-screen, where the X11 path felt sluggish.
+- The internal `swatch_window_fill_frame` signature changed from `unsigned (*rng)(void)` (function pointer) to `uint64_t *state` (caller-owned PRNG state). The pure helper remains testable with deterministic bytes — the unit tests replicate xorshift64 to assert exact output. No CLI behavior change; this is a purely internal reshape.
+- BGRA fill assumes a little-endian host (compile-time `#error` on big-endian). All supported targets (x86_64, arm64) are little-endian.
+
 ## [0.3.1] - 2026-04-27
 
 ### Fixed
@@ -45,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.4.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.0
 [0.3.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.1
 [0.3.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.2.0

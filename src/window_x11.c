@@ -21,8 +21,19 @@ static void on_signal(int sig) {
     s_stop = 1;
 }
 
-static unsigned rand_unsigned(void) {
-    return (unsigned)rand();
+static uint64_t seed_state(void) {
+    uint64_t s = ((uint64_t)time(NULL) << 32) ^ (uint64_t)getpid()
+               ^ (uint64_t)(uintptr_t)&s;
+    if (s == 0) s = 0x9E3779B97F4A7C15ULL;
+    return s;
+}
+
+static void advance_deadline(struct timespec *deadline, long interval_ns) {
+    deadline->tv_nsec += interval_ns;
+    while (deadline->tv_nsec >= 1000000000L) {
+        deadline->tv_nsec -= 1000000000L;
+        deadline->tv_sec  += 1;
+    }
 }
 
 int swatch_window_run(swatch_window_opts_t opts) {
@@ -38,7 +49,7 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
     int fps = opts.fps;
     if (fps <= 0) fps = 15;
-    if (fps > 60) fps = 60;
+    if (fps > 120) fps = 120;
 
     int duration = opts.duration_seconds;
     if (duration < 0) duration = 0;
@@ -120,14 +131,14 @@ int swatch_window_run(swatch_window_opts_t opts) {
     sigaction(SIGINT,  &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    srand((unsigned)time(NULL) ^ (unsigned)getpid());
+    uint64_t rng_state = seed_state();
 
     long total_frames = (duration > 0) ? ((long)duration * (long)fps) : -1;
     long frames_drawn = 0;
-    struct timespec delay = {
-        .tv_sec  = 0,
-        .tv_nsec = 1000000000L / fps
-    };
+    long interval_ns = 1000000000L / fps;
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_MONOTONIC, &deadline);
 
     GC gc = DefaultGC(dpy, screen);
 
@@ -185,12 +196,17 @@ int swatch_window_run(swatch_window_opts_t opts) {
             }
         }
 
-        swatch_window_fill_frame(pixels, width, height, opts.bw, rand_unsigned);
+        swatch_window_fill_frame(pixels, width, height, opts.bw, &rng_state);
         XPutImage(dpy, win, gc, img, 0, 0, 0, 0,
                   (unsigned)width, (unsigned)height);
         XFlush(dpy);
 
-        nanosleep(&delay, NULL);
+        /* Absolute-deadline pacing: target the next frame at deadline += interval,
+         * not "sleep interval after work". If the previous frame ran long the
+         * sleep returns immediately and we render again at the work-rate ceiling. */
+        advance_deadline(&deadline, interval_ns);
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL);
+
         frames_drawn++;
         if (total_frames >= 0 && frames_drawn >= total_frames) break;
     }

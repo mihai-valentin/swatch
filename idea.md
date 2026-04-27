@@ -67,7 +67,7 @@ swatch noise [--size WxH] [--color MODE] [--fps N] [--duration SECONDS]
 |-------------------|-------------|------------------------------------------------------------------------|
 | `--size WxH`      | auto        | Animation area; probed via `TIOCGWINSZ`, fall back to `80x24`          |
 | `--color MODE`    | `auto`      | Required to resolve to `truecolor` or `256` — `none` is refused        |
-| `--fps N`         | `15`        | Frames per second, clamped to `1..60`                                  |
+| `--fps N`         | `15`        | Frames per second, clamped to `1..120`                                 |
 | `--duration N`    | `0`         | Seconds to run; `0` means "until Ctrl+C", otherwise clamped to `1..3600` |
 | `--bw`            | off         | Black-and-white noise only (1-bit palette)                             |
 
@@ -89,7 +89,7 @@ swatch window [--size WxH] [--fps N] [--duration SECONDS] [--bw]
 | Flag           | Default     | Meaning                                                              |
 |----------------|-------------|----------------------------------------------------------------------|
 | `--size WxH`   | `640x480`   | Window dimensions in PIXELS (width 64..3840, height 64..2160)        |
-| `--fps N`      | `15`        | Frames per second, clamped to `1..60`                                |
+| `--fps N`      | `15`        | Frames per second, clamped to `1..120`                               |
 | `--duration N` | `0`         | Seconds to run; `0` = until the user closes the window               |
 | `--bw`         | off         | Black-and-white noise only (1-bit palette)                           |
 
