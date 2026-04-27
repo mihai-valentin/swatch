@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
             print_usage(stdout, prog);
             return 0;
         case OPT_VERSION:
-            printf("swatch 0.4.2\n");
+            printf("swatch 0.4.3\n");
             return 0;
         case '?':
         default:

@@ -11,6 +11,7 @@ typedef int swatch_window_x11_unit_;
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -161,7 +162,14 @@ int swatch_window_run(swatch_window_opts_t opts) {
             if (ev.type == ConfigureNotify) {
                 int nw = ev.xconfigure.width;
                 int nh = ev.xconfigure.height;
-                if (nw > 0 && nh > 0 && (nw != width || nh != height)) {
+                /* Clamp to the same range the CLI parser enforces — guards
+                 * against a misbehaving WM reporting absurd geometry that
+                 * would overflow (size_t)w*h*4 on 32-bit hosts. */
+                if (nw < 64)   nw = 64;
+                if (nw > 3840) nw = 3840;
+                if (nh < 64)   nh = 64;
+                if (nh > 2160) nh = 2160;
+                if (nw != width || nh != height) {
                     resized_to_w = nw;
                     resized_to_h = nh;
                 }
@@ -208,9 +216,14 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
         /* Absolute-deadline pacing: target the next frame at deadline += interval,
          * not "sleep interval after work". If the previous frame ran long the
-         * sleep returns immediately and we render again at the work-rate ceiling. */
+         * sleep returns immediately and we render again at the work-rate ceiling.
+         * Retry on EINTR so that a non-stop signal (e.g. a future SIGWINCH
+         * handler) doesn't shorten the frame. */
         advance_deadline(&deadline, interval_ns);
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL);
+        while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, NULL) == EINTR
+               && !s_stop) {
+            /* interrupted by a non-stop signal — resume the wait */
+        }
 
         frames_drawn++;
         if (total_frames >= 0 && frames_drawn >= total_frames) break;

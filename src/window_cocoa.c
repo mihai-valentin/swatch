@@ -18,6 +18,7 @@ typedef int swatch_window_cocoa_unit_;
 #include <objc/message.h>
 #include <CoreGraphics/CoreGraphics.h>
 
+#include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -71,7 +72,8 @@ static void advance_deadline(struct timespec *deadline, long interval_ns) {
 }
 
 /* macOS has clock_gettime (since 10.12) but no clock_nanosleep. Compute the
- * remaining interval from CLOCK_MONOTONIC and nanosleep that. */
+ * remaining interval from CLOCK_MONOTONIC and nanosleep that. Retries on
+ * EINTR so non-stop signals don't shorten the frame. */
 static void sleep_until_monotonic(const struct timespec *deadline) {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
@@ -84,8 +86,10 @@ static void sleep_until_monotonic(const struct timespec *deadline) {
     if (sec_diff < 0 || (sec_diff == 0 && nsec_diff <= 0)) {
         return;
     }
-    struct timespec remaining = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
-    nanosleep(&remaining, NULL);
+    struct timespec rem = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
+    while (nanosleep(&rem, &rem) == -1 && errno == EINTR && !s_stop) {
+        /* nanosleep wrote the unslept remainder into `rem`; resume */
+    }
 }
 
 /* Convenience for sending zero-arg selectors that return id. */
@@ -216,10 +220,17 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
     uint64_t rng_state = seed_state();
 
-    /* For nextEventMatchingMask:untilDate:inMode:dequeue: */
+    /* For nextEventMatchingMask:untilDate:inMode:dequeue:.
+     * Use alloc/init (not the autoreleased stringWithUTF8String:) so we own
+     * the retain — there is no NSAutoreleasePool around this loop, so an
+     * autoreleased string would leak for the lifetime of the process. */
     Class NSDate_cls = objc_getClass("NSDate");
     id distant_past = cls_msg_id(NSDate_cls, sel_registerName("distantPast"));
-    id mode = make_nsstring("kCFRunLoopDefaultMode");
+    Class NSString_cls = objc_getClass("NSString");
+    id mode_alloc = cls_msg_id(NSString_cls, sel_registerName("alloc"));
+    id mode = ((id (*)(id, SEL, const char *))objc_msgSend)(
+        mode_alloc, sel_registerName("initWithUTF8String:"),
+        "kCFRunLoopDefaultMode");
     SEL sel_next_event = sel_registerName(
         "nextEventMatchingMask:untilDate:inMode:dequeue:");
     SEL sel_send_event = sel_registerName("sendEvent:");
@@ -287,8 +298,12 @@ int swatch_window_run(swatch_window_opts_t opts) {
         if (total_frames >= 0 && frames_drawn >= total_frames) break;
     }
 
-    msg_id(win,  sel_registerName("close"));
-    msg_id(view, sel_release);
+    msg_id(win, sel_registerName("close"));
+    /* Do NOT release `view` here — [win setContentView:view] retained it,
+     * and [win release] will drop that retain. Releasing `view` again
+     * would take it past zero. The +1 from our [NSImageView alloc] is
+     * balanced by the contentView retain inside the window. */
+    msg_id(mode, sel_release);
     msg_id(win,  sel_release);
     CGColorSpaceRelease(cs);
     free(pixels);

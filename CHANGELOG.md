@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-04-27
+
+### Fixed
+
+- `swatch window` Cocoa backend over-released the content `NSImageView` at cleanup. `[win setContentView:view]` retains the view and `[win release]` drops that retain — the explicit `[view release]` afterwards would take it past zero, almost certainly crashing on window close. Removed the redundant release; added a comment explaining the ownership balance.
+- `swatch window` Cocoa backend leaked the run-loop mode `NSString` (`@"kCFRunLoopDefaultMode"`). `make_nsstring` returned an autoreleased object, but the loop is not wrapped in an `NSAutoreleasePool`, so the string would persist for the lifetime of the process. Switched to `[[NSString alloc] initWithUTF8String:]` and an explicit release at function exit.
+- `swatch window` X11 backend accepted `ConfigureNotify` width/height verbatim without re-validating the range. A misbehaving WM (or a corrupted screen geometry from a VM) reporting absurd dimensions would propagate into `(size_t)w * h * 4` and silently under-allocate on 32-bit `size_t` hosts. Now clamps to the same 64..3840 (width) / 64..2160 (height) range the CLI parser enforces.
+- `swatch window` (X11/Cocoa) and `swatch noise` frame pacing now retries on `EINTR`. Previously a non-stop signal (e.g. a future SIGWINCH handler) would shorten the frame interval; the loop now resumes the wait until the deadline is reached or the stop flag fires. SIGINT/SIGTERM still exit cleanly because the stop flag is checked in the retry condition.
+
 ## [0.4.2] - 2026-04-27
 
 ### Fixed
@@ -70,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.4.3]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.3
 [0.4.2]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.2
 [0.4.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.1
 [0.4.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.4.0

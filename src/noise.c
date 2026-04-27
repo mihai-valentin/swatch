@@ -2,6 +2,7 @@
 
 #include "noise.h"
 
+#include <errno.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -58,6 +59,10 @@ static unsigned rand_unsigned(void) {
  * clock_gettime in 10.12 but never added clock_nanosleep, so we fall back
  * to computing the remaining interval and nanosleep()ing that. Returns
  * immediately if the deadline is already in the past.
+ *
+ * Retries on EINTR so a non-stop signal (e.g. SIGWINCH) doesn't shorten
+ * the frame; bails as soon as the stop flag fires so SIGINT/SIGTERM
+ * still exit cleanly.
  */
 static void sleep_until_monotonic(const struct timespec *deadline) {
 #if defined(__APPLE__)
@@ -72,10 +77,15 @@ static void sleep_until_monotonic(const struct timespec *deadline) {
     if (sec_diff < 0 || (sec_diff == 0 && nsec_diff <= 0)) {
         return;
     }
-    struct timespec remaining = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
-    nanosleep(&remaining, NULL);
+    struct timespec rem = { .tv_sec = sec_diff, .tv_nsec = nsec_diff };
+    while (nanosleep(&rem, &rem) == -1 && errno == EINTR && !swatch_noise_stop) {
+        /* nanosleep wrote the unslept remainder into `rem`; resume */
+    }
 #else
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, deadline, NULL);
+    while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, deadline, NULL) == EINTR
+           && !swatch_noise_stop) {
+        /* interrupted by a non-stop signal — resume the wait */
+    }
 #endif
 }
 
