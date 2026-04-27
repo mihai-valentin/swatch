@@ -31,10 +31,22 @@ typedef int swatch_window_cocoa_unit_;
 #define SWATCH_NS_APP_POLICY_REGULAR              0
 #define SWATCH_NS_WINDOW_STYLE_MASK_TITLED        (1u << 0)
 #define SWATCH_NS_WINDOW_STYLE_MASK_CLOSABLE      (1u << 1)
+#define SWATCH_NS_WINDOW_STYLE_MASK_MINIATURIZABLE (1u << 2)
+#define SWATCH_NS_WINDOW_STYLE_MASK_RESIZABLE     (1u << 3)
 #define SWATCH_NS_BACKING_STORE_BUFFERED          2
 #define SWATCH_NS_EVENT_MASK_ANY                  (~(unsigned long)0)
 #define SWATCH_CG_BITMAP_BYTE_ORDER_32_LITTLE     (2u << 12)
 #define SWATCH_CG_IMAGE_ALPHA_NONE_SKIP_FIRST     6u
+
+/* NSImageScaleAxesIndependently — stretches the image to fully cover the
+ * view, so when the window is resized / maximized / full-screened the noise
+ * grows with it (no struct-return ABI gymnastics needed to query bounds). */
+#define SWATCH_NS_IMAGE_SCALE_AXES_INDEPENDENTLY  1u
+
+/* Autoresizing mask: width + height sizable, so the image view tracks the
+ * window's content view through resize. */
+#define SWATCH_NS_VIEW_WIDTH_SIZABLE              2u
+#define SWATCH_NS_VIEW_HEIGHT_SIZABLE             16u
 
 static volatile sig_atomic_t s_stop = 0;
 
@@ -111,7 +123,10 @@ int swatch_window_run(swatch_window_opts_t opts) {
         win_alloc,
         sel_registerName("initWithContentRect:styleMask:backing:defer:"),
         frame,
-        SWATCH_NS_WINDOW_STYLE_MASK_TITLED | SWATCH_NS_WINDOW_STYLE_MASK_CLOSABLE,
+        SWATCH_NS_WINDOW_STYLE_MASK_TITLED
+            | SWATCH_NS_WINDOW_STYLE_MASK_CLOSABLE
+            | SWATCH_NS_WINDOW_STYLE_MASK_MINIATURIZABLE
+            | SWATCH_NS_WINDOW_STYLE_MASK_RESIZABLE,
         SWATCH_NS_BACKING_STORE_BUFFERED,
         NO);
     if (win == nil) {
@@ -129,6 +144,15 @@ int swatch_window_run(swatch_window_opts_t opts) {
     id view_alloc = cls_msg_id(NSImageView_cls, sel_registerName("alloc"));
     id view = ((id (*)(id, SEL, CGRect))objc_msgSend)(
         view_alloc, sel_registerName("initWithFrame:"), frame);
+
+    /* Stretch the image to fill the view on both axes so resize / maximize /
+     * full-screen visually grow the animation. */
+    ((void (*)(id, SEL, unsigned long))objc_msgSend)(
+        view, sel_registerName("setImageScaling:"),
+        SWATCH_NS_IMAGE_SCALE_AXES_INDEPENDENTLY);
+    ((void (*)(id, SEL, unsigned long))objc_msgSend)(
+        view, sel_registerName("setAutoresizingMask:"),
+        SWATCH_NS_VIEW_WIDTH_SIZABLE | SWATCH_NS_VIEW_HEIGHT_SIZABLE);
 
     /* [win setContentView:view]; */
     ((void (*)(id, SEL, id))objc_msgSend)(

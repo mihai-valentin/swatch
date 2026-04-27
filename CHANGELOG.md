@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-27
+
+### Fixed
+
+- `swatch window` now grows the animation when the window is resized, maximized, or full-screened. Previously the pixel buffer stayed at the initial `--size` (or 640x480), leaving the noise pinned to a small region in the upper-left of a larger window. X11 listens for `ConfigureNotify` and reallocates the buffer + `XImage` at the new size; Win32 switches to `WS_OVERLAPPEDWINDOW` and handles `WM_SIZE` to realloc the DIB; Cocoa adds `NSWindowStyleMaskResizable` and sets the image view's `imageScaling` to `NSImageScaleAxesIndependently` so the noise stretches with the view.
+
 ## [0.3.0] - 2026-04-27
 
 ### Added
@@ -39,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests: 12 parser tests + 12 renderer tests. All tests run under `-fsanitize=address,undefined`.
 - Zero external dependencies — libc + POSIX only (`getopt_long`, `isatty`, `getenv`, `fmemopen`).
 
+[0.3.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.1
 [0.3.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.3.0
 [0.2.0]: https://github.com/mihai-valentin/swatch/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mihai-valentin/swatch/releases/tag/v0.1.1

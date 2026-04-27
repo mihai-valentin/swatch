@@ -66,13 +66,14 @@ int swatch_window_run(swatch_window_opts_t opts) {
 
     XStoreName(dpy, win, "swatch noise");
 
+    /* Advertise sane bounds but let the user (and the WM) resize / maximize /
+     * full-screen freely. We re-fill the pixel buffer at whatever size the
+     * window settles on after each ConfigureNotify. */
     XSizeHints hints;
     memset(&hints, 0, sizeof(hints));
-    hints.flags      = PMinSize | PMaxSize;
-    hints.min_width  = width;
-    hints.min_height = height;
-    hints.max_width  = width;
-    hints.max_height = height;
+    hints.flags      = PMinSize;
+    hints.min_width  = 64;
+    hints.min_height = 64;
     XSetWMNormalHints(dpy, win, &hints);
 
     XSelectInput(dpy, win, ExposureMask | StructureNotifyMask);
@@ -131,6 +132,8 @@ int swatch_window_run(swatch_window_opts_t opts) {
     GC gc = DefaultGC(dpy, screen);
 
     while (!s_stop) {
+        int resized_to_w = 0;
+        int resized_to_h = 0;
         while (XPending(dpy) > 0) {
             XEvent ev;
             XNextEvent(dpy, &ev);
@@ -139,8 +142,48 @@ int swatch_window_run(swatch_window_opts_t opts) {
                 s_stop = 1;
                 break;
             }
+            if (ev.type == ConfigureNotify) {
+                int nw = ev.xconfigure.width;
+                int nh = ev.xconfigure.height;
+                if (nw > 0 && nh > 0 && (nw != width || nh != height)) {
+                    resized_to_w = nw;
+                    resized_to_h = nh;
+                }
+            }
         }
         if (s_stop) break;
+
+        if (resized_to_w > 0 && resized_to_h > 0) {
+            /* Detach + free the old image/buffer, allocate at the new size. */
+            img->data = NULL;
+            XDestroyImage(img);
+            free(pixels);
+
+            width  = resized_to_w;
+            height = resized_to_h;
+            pixel_bytes = (size_t)width * (size_t)height * 4u;
+            pixels = (uint8_t *)malloc(pixel_bytes);
+            if (pixels == NULL) {
+                fprintf(stderr,
+                        "swatch window: out of memory on resize (%zu bytes)\n",
+                        pixel_bytes);
+                XDestroyWindow(dpy, win);
+                XCloseDisplay(dpy);
+                return 1;
+            }
+            img = XCreateImage(
+                dpy, visual, (unsigned)depth, ZPixmap, 0,
+                (char *)pixels, (unsigned)width, (unsigned)height,
+                32, width * 4);
+            if (img == NULL) {
+                fprintf(stderr,
+                        "swatch window: XCreateImage failed on resize\n");
+                free(pixels);
+                XDestroyWindow(dpy, win);
+                XCloseDisplay(dpy);
+                return 1;
+            }
+        }
 
         swatch_window_fill_frame(pixels, width, height, opts.bw, rand_unsigned);
         XPutImage(dpy, win, gc, img, 0, 0, 0, 0,

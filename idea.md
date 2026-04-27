@@ -95,6 +95,8 @@ swatch window [--size WxH] [--fps N] [--duration SECONDS] [--bw]
 
 `--color`, `--char`, `--label` are accepted but ignored — windows are always 24-bit RGB and have no character cell or label below.
 
+The window is resizable: maximize / full-screen / drag-resize all grow the animation. X11 and Win32 reallocate the pixel buffer on `ConfigureNotify` / `WM_SIZE`; Cocoa stretches via `NSImageScaleAxesIndependently` on the image view.
+
 Exit codes: `64` for usage errors (out-of-range size, stray positional argument); `1` for platform errors (cannot open X display, cannot create window). Closing the window or exhausting `--duration` exits `0`.
 
 ## Architecture (deliberately split across 4 shawarma tasks)

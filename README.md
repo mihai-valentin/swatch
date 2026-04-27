@@ -78,11 +78,11 @@ Release binaries are published to GitHub Releases on every `v*` tag.
 
 ```bash
 # Linux x86_64
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.0-linux-x64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.1-linux-x64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 
 # macOS (Apple Silicon or Intel)
-curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.0-macos-arm64.tar.gz | tar xz
+curl -fsSL https://github.com/mihai-valentin/swatch/releases/latest/download/swatch-v0.3.1-macos-arm64.tar.gz | tar xz
 sudo mv swatch /usr/local/bin/
 ```
 
@@ -133,6 +133,8 @@ Backends use only system libraries — no third-party dependencies:
 - **Windows** — Win32 (`user32`, `gdi32`).
 - **Linux / Unix** — X11 (`libX11`). Requires X11 development headers at compile time (`apt install libx11-dev` / `dnf install libX11-devel`); on Wayland-only setups, ensure XWayland is available at runtime.
 - **macOS** — Cocoa via `objc_msgSend` from a pure-C source file (no Objective-C compilation), linked against `AppKit` and `CoreGraphics` system frameworks.
+
+The window is resizable — drag a corner, click the maximize box, or toggle full-screen and the animation grows to fill it. On X11 and Win32 the pixel buffer is reallocated at the new size so each pixel is a fresh noise cell at native resolution; on macOS the image scales to cover the view via `NSImageScaleAxesIndependently`.
 
 Closing the window (or `--duration` expiry, or Ctrl+C in the launching console on Windows) exits `0`. Exit `1` on platform errors (cannot open X display, cannot create window). Exit `64` on usage errors (out-of-range `--size`, stray positional argument).
 

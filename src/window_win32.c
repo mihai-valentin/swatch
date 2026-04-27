@@ -40,6 +40,25 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+    case WM_SIZE: {
+        int nw = LOWORD(lparam);
+        int nh = HIWORD(lparam);
+        if (nw > 0 && nh > 0 && (nw != s_width || nh != s_height)) {
+            size_t bytes = (size_t)nw * (size_t)nh * 4u;
+            uint8_t *np = (uint8_t *)realloc(s_pixels, bytes);
+            if (np != NULL) {
+                s_pixels = np;
+                s_width  = nw;
+                s_height = nh;
+                s_bmi.bmiHeader.biWidth  = nw;
+                s_bmi.bmiHeader.biHeight = -nh;
+            }
+        }
+        return 0;
+    }
+    case WM_ERASEBKGND:
+        /* Skip background erase — we paint every pixel each frame. */
+        return 1;
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
@@ -95,7 +114,9 @@ int swatch_window_run(swatch_window_opts_t opts) {
         return 1;
     }
 
-    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+    /* Use the standard overlapped window style (includes resize border,
+     * minimize, and maximize boxes) so the user can full-screen / maximize. */
+    DWORD style = WS_OVERLAPPEDWINDOW;
     RECT rect = { 0, 0, width, height };
     AdjustWindowRect(&rect, style, FALSE);
     int outer_w = rect.right - rect.left;
